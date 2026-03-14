@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sales Tracker</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════════════════
+       ANSICHT 1: LOGIN
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="login-view">
+    <div class="login-card">
+
+      <div class="login-logo">
+        <span class="login-logo-icon">📈</span>
+        <span class="login-logo-title">Sales Tracker</span>
+      </div>
+
+      <p class="login-subtitle">Melde dich mit deinem Team-Account an.</p>
+
+      <div id="login-error" class="login-error hidden"></div>
+
+      <div class="login-field">
+        <label for="loginEmail" class="login-label">E-Mail</label>
+        <input
+          id="loginEmail"
+          type="email"
+          autocomplete="email"
+          placeholder="deine@email.de"
+          class="login-input"
+        />
+      </div>
+
+      <div class="login-field">
+        <label for="loginPassword" class="login-label">Passwort</label>
+        <input
+          id="loginPassword"
+          type="password"
+          autocomplete="current-password"
+          placeholder="••••••••"
+          class="login-input"
+        />
+      </div>
+
+      <button id="loginBtn" class="login-btn">
+        <span id="loginBtnText">Einloggen</span>
+        <span id="loginBtnSpinner" class="hidden login-spinner">⟳</span>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       ANSICHT 2: TRACKER (nur sichtbar wenn eingeloggt)
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="tracker-view" class="hidden">
+  <div class="app">
+
+    <!-- Header -->
+    <header class="header">
+
+      <!-- Linke Seite: User-Info -->
+      <div class="user-info">
+        <span class="user-avatar">👤</span>
+        <span id="userEmail" class="user-email">–</span>
+      </div>
+
+      <!-- Rechte Seite: Korrektur-Toggle + Eingabefeld + Logout -->
+      <div class="header-controls">
+
+        <!-- Korrektur-Modus Toggle -->
+        <div class="correction-wrap">
+          <label class="toggle-label" for="correctionMode">
+            <span class="toggle-text">Korrektur</span>
+            <div class="toggle-switch">
+              <input type="checkbox" id="correctionMode" />
+              <span class="toggle-track">
+                <span class="toggle-thumb"></span>
+              </span>
+            </div>
+          </label>
+        </div>
+
+        <!-- Manueller Wert -->
+        <div class="manual-input-wrap">
+          <label for="manualValue" class="manual-label">Wert</label>
+          <input
+            id="manualValue"
+            type="number"
+            min="0"
+            step="any"
+            placeholder="1"
+            class="manual-input"
+          />
+        </div>
+
+        <!-- Logout -->
+        <button id="logoutBtn" class="logout-btn" title="Ausloggen">⏻</button>
+
+      </div>
+    </header>
+
+    <!-- Korrektur-Modus Banner -->
+    <div id="correctionBanner" class="correction-banner hidden">
+      ⚠️ Korrektur-Modus aktiv – Klicks ziehen Werte ab!
+    </div>
+
+    <!-- Tab Navigation -->
+    <nav class="tabs">
+      <button class="tab active" data-tab="cold-calling">Cold Calling</button>
+      <button class="tab" data-tab="setting">Setting</button>
+      <button class="tab" data-tab="closing">Closing</button>
+    </nav>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden"></div>
+
+    <!-- ── COLD CALLING ─────────────────────────────────────── -->
+    <section id="cold-calling" class="panel active">
+      <div class="btn-grid">
+        <button class="kpi-btn" data-event="Anwahlen">
+          <span class="kpi-icon">📞</span>
+          <span class="kpi-label">Anwahlen</span>
+        </button>
+        <button class="kpi-btn" data-event="Erreichte Personen">
+          <span class="kpi-icon">🙋</span>
+          <span class="kpi-label">Erreichte Personen</span>
+        </button>
+        <button class="kpi-btn" data-event="Entscheider">
+          <span class="kpi-icon">👔</span>
+          <span class="kpi-label">Entscheider</span>
+        </button>
+        <button class="kpi-btn" data-event="Intro">
+          <span class="kpi-icon">👋</span>
+          <span class="kpi-label">Intro</span>
+        </button>
+        <button class="kpi-btn" data-event="Short Story">
+          <span class="kpi-icon">📖</span>
+          <span class="kpi-label">Short Story</span>
+        </button>
+        <button class="kpi-btn" data-event="Pitch">
+          <span class="kpi-icon">🎯</span>
+          <span class="kpi-label">Pitch</span>
+        </button>
+        <button class="kpi-btn" data-event="Nach Termin gefragt">
+          <span class="kpi-icon">🗓️</span>
+          <span class="kpi-label">Nach Termin gefragt</span>
+        </button>
+        <button class="kpi-btn" data-event="Termin vereinbart">
+          <span class="kpi-icon">✅</span>
+          <span class="kpi-label">Termin vereinbart</span>
+        </button>
+        <button class="kpi-btn" data-event="Nachqualifizierung">
+          <span class="kpi-icon">🔍</span>
+          <span class="kpi-label">Nachqualifizierung</span>
+        </button>
+        <button class="kpi-btn" data-event="An Vorzimmer gescheitert">
+          <span class="kpi-icon">🚪</span>
+          <span class="kpi-label">An Vorzimmer gescheitert</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ── SETTING ───────────────────────────────────────────── -->
+    <section id="setting" class="panel">
+      <div class="btn-grid">
+        <button class="kpi-btn" data-event="Setting geführt">
+          <span class="kpi-icon">🤝</span>
+          <span class="kpi-label">Setting geführt</span>
+        </button>
+        <button class="kpi-btn" data-event="Setting Unqualifiziert">
+          <span class="kpi-icon">❌</span>
+          <span class="kpi-label">Setting Unqualifiziert</span>
+        </button>
+        <button class="kpi-btn" data-event="No Show">
+          <span class="kpi-icon">👻</span>
+          <span class="kpi-label">No Show</span>
+        </button>
+        <button class="kpi-btn" data-event="Setting Follow Up">
+          <span class="kpi-icon">🔁</span>
+          <span class="kpi-label">Setting Follow Up</span>
+        </button>
+        <button class="kpi-btn" data-event="Closing terminiert">
+          <span class="kpi-icon">📅</span>
+          <span class="kpi-label">Closing terminiert</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ── CLOSING ───────────────────────────────────────────── -->
+    <section id="closing" class="panel">
+      <div class="btn-grid">
+        <button class="kpi-btn" data-event="Closing geführt">
+          <span class="kpi-icon">💬</span>
+          <span class="kpi-label">Closing geführt</span>
+        </button>
+        <button class="kpi-btn" data-event="Closing No Show">
+          <span class="kpi-icon">👻</span>
+          <span class="kpi-label">Closing No Show</span>
+        </button>
+        <button class="kpi-btn" data-event="Closing Follow Up">
+          <span class="kpi-icon">🔁</span>
+          <span class="kpi-label">Closing Follow Up</span>
+        </button>
+        <button class="kpi-btn" data-event="Folgebesprechung vereinbart">
+          <span class="kpi-icon">📆</span>
+          <span class="kpi-label">Folgebesprechung vereinbart</span>
+        </button>
+        <button class="kpi-btn" data-event="Folgebesprechung No Show">
+          <span class="kpi-icon">💨</span>
+          <span class="kpi-label">Folgebesprechung No Show</span>
+        </button>
+        <button class="kpi-btn" data-event="Als Kunden gewonnen">
+          <span class="kpi-icon">🏆</span>
+          <span class="kpi-label">Als Kunden gewonnen</span>
+        </button>
+        <!-- Betrag: nimmt die volle Breite beider Spalten ein -->
+        <div class="betrag-row">
+          <label class="betrag-label">💶 Betrag (€)</label>
+          <div class="betrag-input-wrap">
+            <input
+              id="betragInput"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="0,00"
+              class="betrag-input"
+            />
+            <button id="betragBtn" class="betrag-confirm-btn" title="Betrag speichern">
+              ✓
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+  </div><!-- /#tracker-view -->
+
+  <script src="popup.js"></script>
+</body>
+</html>

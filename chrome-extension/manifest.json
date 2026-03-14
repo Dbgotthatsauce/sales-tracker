@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Sales Tracker",
+  "version": "1.0.0",
+  "description": "Track your sales KPIs and sync to Supabase.",
+  "action": {
+    "default_title": "Sales Tracker"
+  },
+  "side_panel": {
+    "default_path": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "sidePanel",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://*.supabase.co/*"
+  ]
+}

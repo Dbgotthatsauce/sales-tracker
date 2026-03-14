@@ -264,6 +264,25 @@ export default function DashboardPage() {
                   Stand: {lastUpdated.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
                 </span>
               )}
+
+              {/* Nutzer-Dropdown – nur für Admins, dezent im Header */}
+              {isAdmin && (
+                <div className="relative">
+                  <span className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-slate-500 text-xs">▾</span>
+                  <select
+                    value={selectedUserId}
+                    onChange={(e) => setSelectedUserId(e.target.value)}
+                    disabled={loading}
+                    className="appearance-none pl-3 pr-7 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 border border-slate-700 text-slate-200 cursor-pointer transition-colors hover:border-slate-500 focus:outline-none focus:border-indigo-500 disabled:cursor-not-allowed"
+                  >
+                    <option value="all">👥 Gesamtes Team</option>
+                    {users.map((u) => (
+                      <option key={u.id} value={u.id}>{u.email}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <button
                 onClick={() => loadData(filter, selectedUserId)}
                 disabled={loading}
@@ -272,6 +291,7 @@ export default function DashboardPage() {
                 <span className={loading ? 'inline-block animate-spin' : ''}>↻</span>
                 {loading ? 'Lädt…' : 'Aktualisieren'}
               </button>
+
               {/* Logout */}
               <button
                 onClick={handleLogout}
@@ -284,10 +304,8 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Filterleiste */}
+          {/* Filterleiste – nur Zeitfilter */}
           <div className="flex items-center gap-3 flex-wrap">
-
-            {/* Zeitfilter */}
             <div className="flex items-center gap-1 p-1 bg-slate-900 border border-slate-700 rounded-xl">
               {(Object.keys(FILTER_LABELS) as Filter[]).map((f) => (
                 <button
@@ -305,25 +323,6 @@ export default function DashboardPage() {
                 </button>
               ))}
             </div>
-
-            {/* Nutzer-Dropdown – nur für Admins */}
-            {isAdmin && (
-              <div className="relative">
-                <span className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-slate-500 text-xs">▾</span>
-                <select
-                  value={selectedUserId}
-                  onChange={(e) => setSelectedUserId(e.target.value)}
-                  disabled={loading}
-                  className="appearance-none pl-3 pr-7 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 border border-slate-700 text-slate-200 cursor-pointer transition-colors hover:border-slate-500 focus:outline-none focus:border-indigo-500 disabled:cursor-not-allowed"
-                >
-                  <option value="all">👥 Gesamtes Team</option>
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>{u.email}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-
           </div>
 
           {/* Tab-Leiste */}

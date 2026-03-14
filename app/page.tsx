@@ -250,7 +250,7 @@ export default function DashboardPage() {
           {/* Titelzeile */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">📈</span>
+              <img src="/logo.svg" alt="Logo" className="h-8 w-8 object-contain" />
               <div>
                 <h1 className="text-lg font-bold text-white leading-tight">Sales Tracking Dashboard</h1>
                 <p className="text-xs text-slate-500">

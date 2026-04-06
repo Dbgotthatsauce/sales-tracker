@@ -116,7 +116,33 @@ async function trackEvent(eventType, value, accessToken, userId) {
   })
   if (!res.ok) {
     const text = await res.text()
-    throw new Error(`HTTP ${res.status}: ${text}`)
+    const err  = new Error(`HTTP ${res.status}: ${text}`)
+    if (res.status === 401) err.isAuthError = true
+    throw err
+  }
+}
+
+// Schreibt ein Event – bei 401 einmal Token refreshen und nochmals versuchen.
+// Wirft { isAuthError: true } nur wenn Auth auch nach Refresh scheitert.
+async function trackEventWithAuth(eventType, value) {
+  const s = loadSession()
+  if (!s?.accessToken) {
+    const err = new Error('Keine Session')
+    err.isAuthError = true
+    throw err
+  }
+  try {
+    await trackEvent(eventType, value, s.accessToken, s.userId)
+  } catch (err) {
+    if (!err.isAuthError) throw err          // echter Netzwerk-/DB-Fehler, kein Auth-Problem
+
+    // 401 → Token einmalig refreshen und Schreibvorgang wiederholen
+    if (!s.refreshToken) throw err
+    const refreshed = await supabaseRefresh(s.refreshToken)
+    if (!refreshed) throw err
+    saveSession(refreshed.accessToken, refreshed.refreshToken, s.userId, s.email)
+    // Retry – wenn das nochmals 401 wirft, propagiert der Fehler als isAuthError
+    await trackEvent(eventType, value, refreshed.accessToken, s.userId)
   }
 }
 
@@ -376,12 +402,10 @@ function initTracker(accessToken, userId) {
 
   // ── Heutige Summen laden und Counter befüllen ────────────
   async function refreshCounters() {
-    const token = await getValidToken()
-    if (!token) { showSessionExpiredBanner(); return }
-    const s   = loadSession()
-    const uid = s?.userId ?? userId
+    const s = loadSession()
+    if (!s?.accessToken) return   // kein Token → still ignorieren, kein Banner
     try {
-      const totals = await loadDailyTotals(token, uid)
+      const totals = await loadDailyTotals(s.accessToken, s.userId ?? userId)
       document.querySelectorAll('.kpi-btn').forEach(btn => {
         const input = btn.querySelector('.counter-input')
         if (!input) return
@@ -393,6 +417,7 @@ function initTracker(accessToken, userId) {
       })
     } catch (err) {
       console.error('Fehler beim Laden der Tagessummen:', err)
+      // Nur lesen, kein Banner – Schreibvorgänge entscheiden über Auth-Fehler
     }
   }
 
@@ -401,16 +426,10 @@ function initTracker(accessToken, userId) {
   // ── Diff senden ──────────────────────────────────────────
   async function sendDiff(eventType, diff, counterInput, originBtn) {
     if (diff === 0) return
-    const token = await getValidToken()
-    if (!token) {
-      counterInput.value = counterInput.dataset.prev
-      showSessionExpiredBanner()
-      return
-    }
-    const s   = loadSession()
-    const uid = s?.userId ?? userId
     try {
-      await trackEvent(eventType, diff, token, uid)
+      await trackEventWithAuth(eventType, diff)
+      // Erfolg → eventuellen Fehlerbanner sofort ausblenden
+      hideSessionExpiredBanner()
       if (diff > 0) {
         showToast(`✓ ${eventType}${diff !== 1 ? ` (+${diff})` : ''}`, 'ok')
         if (diff === 1) triggerCelebration(eventType, originBtn)
@@ -419,8 +438,12 @@ function initTracker(accessToken, userId) {
       }
     } catch (err) {
       console.error('Tracking-Fehler:', err)
-      showToast('Fehler beim Speichern', 'err')
       counterInput.value = counterInput.dataset.prev
+      if (err.isAuthError) {
+        showSessionExpiredBanner()
+      } else {
+        showToast('Fehler beim Speichern', 'err')
+      }
     }
   }
 
@@ -485,19 +508,21 @@ function initTracker(accessToken, userId) {
       input.focus()
       return
     }
-    const token = await getValidToken()
-    if (!token) { showSessionExpiredBanner(); return }
-    const s   = loadSession()
-    const uid = s?.userId ?? userId
     const btn = document.getElementById('betragBtn')
     btn.disabled = true
     try {
-      await trackEvent('Betrag', absValue, token, uid)
+      await trackEventWithAuth('Betrag', absValue)
+      // Erfolg → eventuellen Fehlerbanner ausblenden
+      hideSessionExpiredBanner()
       input.value = ''
       showToast(`✓ Betrag ${absValue.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} gespeichert`, 'ok')
     } catch (err) {
       console.error('Betrag-Fehler:', err)
-      showToast('Fehler beim Speichern', 'err')
+      if (err.isAuthError) {
+        showSessionExpiredBanner()
+      } else {
+        showToast('Fehler beim Speichern', 'err')
+      }
     } finally {
       btn.disabled = false
     }

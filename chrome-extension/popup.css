@@ -83,8 +83,9 @@ html, body {
   background: #0f1117;
   padding: 24px 20px;
 }
-#login-view.hidden  { display: none; }
-#tracker-view.hidden { display: none; }
+#login-view.hidden         { display: none; }
+#tracker-view.hidden       { display: none; }
+.session-banner.hidden     { display: none; }
 
 .login-card {
   width: 100%;

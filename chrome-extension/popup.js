@@ -1,4 +1,11 @@
 // =============================================================
+// Banner sofort verstecken – bevor irgendein async-Code läuft.
+// Der Side Panel merkt sich den letzten DOM-Zustand, daher muss
+// der Fehlerzustand beim jedem Öffnen synchron zurückgesetzt werden.
+// =============================================================
+document.getElementById('session-expired-banner')?.classList.add('hidden')
+
+// =============================================================
 // Konfiguration
 // =============================================================
 const SUPABASE_URL      = 'https://tcfoiduoquheqmnoigto.supabase.co'
@@ -331,19 +338,14 @@ function setLoginLoading(isLoading) {
 // =============================================================
 // Initialisierung – Session beim Öffnen prüfen
 // =============================================================
-async function initAuth() {
+function initAuth() {
+  // Kein async-Check beim Start: gespeichertes Token wird blind vertraut.
+  // Ungültige Tokens werden erst beim nächsten echten Schreibvorgang erkannt.
   const session = loadSession()
   if (session?.accessToken) {
-    // Automatisch refreshen wenn abgelaufen – User bleibt eingeloggt
-    const token = await getValidToken()
-    if (token) {
-      const s = loadSession() // nach möglichem Refresh neu laden
-      showTrackerView(s.email)
-      initTracker(token, s.userId)
-      return
-    }
-    // Nur ausloggen wenn Refresh wirklich fehlgeschlagen ist
-    clearSession()
+    showTrackerView(session.email)
+    initTracker(session.accessToken, session.userId)
+    return
   }
   showLoginView()
 }

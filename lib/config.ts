@@ -5,4 +5,5 @@
 export const ADMIN_EMAILS: string[] = [
   'richard@bl-digital-marketing.de',
   'david@bl-digital-marketing.de',
+  'info@terminjaeger.de',
 ]

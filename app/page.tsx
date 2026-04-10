@@ -372,7 +372,7 @@ export default function DashboardPage() {
     setLoading(true)
     setError(null)
 
-    let query = supabase.from('tracking_events').select('event_type, value')
+    let query = supabase.from('tracking_events').select('event_type, value').limit(100000)
 
     if (activeFilter === 'custom') {
       if (activeFrom) query = query.gte('created_at', new Date(activeFrom).toISOString())

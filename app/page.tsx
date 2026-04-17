@@ -10,6 +10,10 @@ import {
   FolderSync, CalendarPlus, Trophy, Euro, Search, LogOut,
   ChevronLeft, ChevronRight,
 } from 'lucide-react'
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  Legend, ResponsiveContainer,
+} from 'recharts'
 import { supabase } from '@/lib/supabase'
 import { ADMIN_EMAILS } from '@/lib/config'
 import { clearSessionCookie } from '@/lib/session-cookie'
@@ -17,6 +21,8 @@ import { clearSessionCookie } from '@/lib/session-cookie'
 // ─── Types ────────────────────────────────────────────────────
 type Totals = Record<string, number>
 type Filter = 'today' | 'week' | 'month' | 'all' | 'custom'
+type RawEvent = { event_type: string; value: number; created_at: string }
+type ChartPoint = Record<string, number | string>
 
 interface UserProfile {
   id: string
@@ -49,6 +55,116 @@ function getStartDate(filter: Filter): Date | null {
     return new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
   }
   return null
+}
+
+// ─── Chart helpers ────────────────────────────────────────────
+const CHART_COLORS = ['#6366f1', '#22d3ee', '#a78bfa', '#34d399', '#fb923c', '#f472b6']
+
+const MONTH_ABBR = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez']
+const WEEKDAY_ORDER = ['Mo','Di','Mi','Do','Fr','Sa','So']
+const JS_DAY_TO_LABEL: Record<number, string> = { 1:'Mo', 2:'Di', 3:'Mi', 4:'Do', 5:'Fr', 6:'Sa', 0:'So' }
+
+function getTimeBuckets(filter: Filter, from: string, to: string): string[] {
+  if (filter === 'today') {
+    return Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`)
+  }
+  if (filter === 'week') return WEEKDAY_ORDER
+  if (filter === 'month') {
+    const now = new Date()
+    const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+    return Array.from({ length: days }, (_, i) => String(i + 1))
+  }
+  if (filter === 'all') return MONTH_ABBR
+  // custom
+  if (from && to) {
+    const start = new Date(from + 'T00:00:00')
+    const end   = new Date(to   + 'T23:59:59')
+    const diffDays = Math.ceil((end.getTime() - start.getTime()) / 86400000)
+    if (diffDays <= 31) {
+      const buckets: string[] = []
+      const cur = new Date(start)
+      while (cur <= end) {
+        buckets.push(`${String(cur.getDate()).padStart(2,'0')}.${String(cur.getMonth()+1).padStart(2,'0')}`)
+        cur.setDate(cur.getDate() + 1)
+      }
+      return buckets
+    }
+    const buckets: string[] = []
+    const cur = new Date(start.getFullYear(), start.getMonth(), 1)
+    const endMonth = new Date(end.getFullYear(), end.getMonth(), 1)
+    while (cur <= endMonth) {
+      buckets.push(`${MONTH_ABBR[cur.getMonth()]} ${cur.getFullYear()}`)
+      cur.setMonth(cur.getMonth() + 1)
+    }
+    return buckets
+  }
+  return []
+}
+
+function getEventBucket(createdAt: string, filter: Filter, from: string, to: string): string {
+  const d = new Date(createdAt)
+  if (filter === 'today')  return `${String(d.getHours()).padStart(2, '0')}:00`
+  if (filter === 'week')   return JS_DAY_TO_LABEL[d.getDay()] ?? ''
+  if (filter === 'month')  return String(d.getDate())
+  if (filter === 'all')    return MONTH_ABBR[d.getMonth()]
+  if (from && to) {
+    const start = new Date(from + 'T00:00:00')
+    const end   = new Date(to   + 'T23:59:59')
+    const diffDays = Math.ceil((end.getTime() - start.getTime()) / 86400000)
+    if (diffDays <= 31) {
+      return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}`
+    }
+    return `${MONTH_ABBR[d.getMonth()]} ${d.getFullYear()}`
+  }
+  return ''
+}
+
+function buildChartData(
+  events: RawEvent[],
+  kpiKeys: string[],
+  filter: Filter,
+  from: string,
+  to: string,
+): ChartPoint[] {
+  // For 'all', derive the full date range from actual event data
+  if (filter === 'all') {
+    if (events.length === 0) return []
+    const timestamps = events.map(e => new Date(e.created_at).getTime())
+    const minDate = new Date(Math.min(...timestamps))
+    const maxDate = new Date(Math.max(...timestamps))
+    const buckets: string[] = []
+    const cur = new Date(minDate.getFullYear(), minDate.getMonth(), 1)
+    const end = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1)
+    while (cur <= end) {
+      buckets.push(`${MONTH_ABBR[cur.getMonth()]} ${cur.getFullYear()}`)
+      cur.setMonth(cur.getMonth() + 1)
+    }
+    const acc: Record<string, Record<string, number>> = {}
+    for (const b of buckets) acc[b] = Object.fromEntries(kpiKeys.map(k => [k, 0]))
+    for (const ev of events) {
+      if (!kpiKeys.includes(ev.event_type)) continue
+      const d = new Date(ev.created_at)
+      const b = `${MONTH_ABBR[d.getMonth()]} ${d.getFullYear()}`
+      if (acc[b] !== undefined) {
+        acc[b][ev.event_type] = (acc[b][ev.event_type] ?? 0) + Number(ev.value)
+      }
+    }
+    return buckets.map(b => ({ label: b, ...acc[b] }))
+  }
+
+  const buckets = getTimeBuckets(filter, from, to)
+  const acc: Record<string, Record<string, number>> = {}
+  for (const b of buckets) {
+    acc[b] = Object.fromEntries(kpiKeys.map(k => [k, 0]))
+  }
+  for (const ev of events) {
+    if (!kpiKeys.includes(ev.event_type)) continue
+    const b = getEventBucket(ev.created_at, filter, from, to)
+    if (b && acc[b] !== undefined) {
+      acc[b][ev.event_type] = (acc[b][ev.event_type] ?? 0) + Number(ev.value)
+    }
+  }
+  return buckets.map(b => ({ label: b, ...acc[b] }))
 }
 
 // ─── Sub-components ───────────────────────────────────────────
@@ -101,6 +217,54 @@ function SectionHeading({ title, subtitle }: { title: string; subtitle?: string 
     <div className="mb-4">
       <h2 className="text-lg font-bold text-white">{title}</h2>
       {subtitle && <p className="text-sm text-slate-500 mt-0.5">{subtitle}</p>}
+    </div>
+  )
+}
+
+// ─── KPI Trend Chart ─────────────────────────────────────────
+interface KpiTrendChartProps {
+  data: ChartPoint[]
+  kpiKeys: string[]
+}
+
+function KpiTrendChart({ data, kpiKeys }: KpiTrendChartProps) {
+  return (
+    <div className="rounded-xl border border-slate-700 bg-slate-800 p-5">
+      <ResponsiveContainer width="100%" height={280}>
+        <LineChart data={data} margin={{ top: 5, right: 16, left: -10, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+          <XAxis
+            dataKey="label"
+            tick={{ fill: '#64748b', fontSize: 11 }}
+            axisLine={{ stroke: '#334155' }}
+            tickLine={false}
+            interval="preserveStartEnd"
+          />
+          <YAxis
+            tick={{ fill: '#64748b', fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+            allowDecimals={false}
+          />
+          <Tooltip
+            contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '10px', fontSize: '12px' }}
+            labelStyle={{ color: '#94a3b8', marginBottom: '4px' }}
+            itemStyle={{ color: '#e2e8f0' }}
+          />
+          <Legend wrapperStyle={{ fontSize: '12px', color: '#94a3b8', paddingTop: '12px' }} />
+          {kpiKeys.map((key, i) => (
+            <Line
+              key={key}
+              type="monotone"
+              dataKey={key}
+              stroke={CHART_COLORS[i % CHART_COLORS.length]}
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 4, strokeWidth: 0 }}
+            />
+          ))}
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   )
 }
@@ -302,6 +466,7 @@ export default function DashboardPage() {
 
   // Dashboard-State
   const [totals, setTotals]               = useState<Totals>({})
+  const [rawEvents, setRawEvents]         = useState<RawEvent[]>([])
   const [loading, setLoading]             = useState(true)
   const [error, setError]                 = useState<string | null>(null)
   const [lastUpdated, setLastUpdated]     = useState<Date | null>(null)
@@ -363,6 +528,31 @@ export default function DashboardPage() {
   }, [isAdmin, authLoading])
 
   // ── Daten laden ───────────────────────────────────────────
+  function buildQuery(
+    activeFilter: Filter,
+    activeUserId: string,
+    activeFrom: string,
+    activeTo: string,
+  ) {
+    let q = supabase.from('tracking_events').select('event_type, value, created_at')
+
+    if (activeFilter === 'custom') {
+      if (activeFrom) q = q.gte('created_at', new Date(activeFrom).toISOString())
+      if (activeTo) {
+        const toDate = new Date(activeTo)
+        toDate.setDate(toDate.getDate() + 1)
+        q = q.lt('created_at', toDate.toISOString())
+      }
+    } else {
+      const startDate = getStartDate(activeFilter)
+      if (startDate) q = q.gte('created_at', startDate.toISOString())
+    }
+
+    if (activeUserId !== 'all') q = q.eq('user_id', activeUserId)
+
+    return q
+  }
+
   async function loadData(
     activeFilter: Filter  = filter,
     activeUserId: string  = selectedUserId,
@@ -372,34 +562,29 @@ export default function DashboardPage() {
     setLoading(true)
     setError(null)
 
-    let query = supabase.from('tracking_events').select('event_type, value').limit(100000)
+    // Paginierung: Supabase limitiert serverseitig auf max. 1000 Zeilen,
+    // daher in 1000er-Batches laden bis alle Daten geholt sind.
+    const PAGE = 1000
+    const all: RawEvent[] = []
+    let offset = 0
 
-    if (activeFilter === 'custom') {
-      if (activeFrom) query = query.gte('created_at', new Date(activeFrom).toISOString())
-      if (activeTo) {
-        const toDate = new Date(activeTo)
-        toDate.setDate(toDate.getDate() + 1)
-        query = query.lt('created_at', toDate.toISOString())
-      }
-    } else {
-      const startDate = getStartDate(activeFilter)
-      if (startDate) query = query.gte('created_at', startDate.toISOString())
+    while (true) {
+      const { data, error: sbError } = await buildQuery(activeFilter, activeUserId, activeFrom, activeTo)
+        .range(offset, offset + PAGE - 1)
+
+      if (sbError) { setError(sbError.message); setLoading(false); return }
+
+      all.push(...((data ?? []) as RawEvent[]))
+      if ((data?.length ?? 0) < PAGE) break
+      offset += PAGE
     }
-
-    // Normaler User ist immer auf seine eigene ID beschränkt
-    if (activeUserId !== 'all') {
-      query = query.eq('user_id', activeUserId)
-    }
-
-    const { data, error: sbError } = await query
-
-    if (sbError) { setError(sbError.message); setLoading(false); return }
 
     const agg: Totals = {}
-    for (const row of data ?? []) {
+    for (const row of all) {
       agg[row.event_type] = (agg[row.event_type] ?? 0) + Number(row.value)
     }
     setTotals(agg)
+    setRawEvents(all)
     setLastUpdated(new Date())
     setLoading(false)
   }
@@ -626,6 +811,13 @@ export default function DashboardPage() {
                 <RateCard label="Pitch → Nach Termin gefragt"       numeratorLabel="Nach Termin gefragt" denominatorLabel="Pitch"               rate={rate('Nach Termin gefragt', 'Pitch')} />
               </div>
             </section>
+            <section>
+              <SectionHeading title="Verlauf" subtitle={`KPI-Entwicklung · ${FILTER_LABELS[filter]}`} />
+              <KpiTrendChart
+                data={buildChartData(rawEvents, ['Anwahlen','Erreichte Personen','Entscheider','Termin vereinbart'], filter, customFrom, customTo)}
+                kpiKeys={['Anwahlen','Erreichte Personen','Entscheider','Termin vereinbart']}
+              />
+            </section>
           </>
         )}
 
@@ -649,6 +841,13 @@ export default function DashboardPage() {
                 <RateCard label="Setting → Unqualifiziert"       numeratorLabel="Setting Unqualifiziert" denominatorLabel="Setting geführt"   rate={rate('Setting Unqualifiziert', 'Setting geführt')} />
                 <RateCard label="Termin vereinbart → No Show"    numeratorLabel="No Show"                denominatorLabel="Termin vereinbart" rate={rate('No Show', 'Termin vereinbart')} />
               </div>
+            </section>
+            <section>
+              <SectionHeading title="Verlauf" subtitle={`KPI-Entwicklung · ${FILTER_LABELS[filter]}`} />
+              <KpiTrendChart
+                data={buildChartData(rawEvents, ['Setting geführt','Closing terminiert','No Show','Setting Follow Up'], filter, customFrom, customTo)}
+                kpiKeys={['Setting geführt','Closing terminiert','No Show','Setting Follow Up']}
+              />
             </section>
           </>
         )}
@@ -687,6 +886,13 @@ export default function DashboardPage() {
                 <RateCard label="No Show → Follow Up (gesamt)"             numeratorLabel="Setting FU + Closing FU"   denominatorLabel="No Show + Closing No Show"    rate={rateRaw(get('Setting Follow Up') + get('Closing Follow Up'), get('No Show') + get('Closing No Show'))} />
                 <RateCard label="Folgebesprechung ver. → No Show Rate"     numeratorLabel="Folgebesprechung No Show"   denominatorLabel="Folgebesprechung vereinbart"  rate={rate('Folgebesprechung No Show', 'Folgebesprechung vereinbart')} />
               </div>
+            </section>
+            <section>
+              <SectionHeading title="Verlauf" subtitle={`KPI-Entwicklung · ${FILTER_LABELS[filter]}`} />
+              <KpiTrendChart
+                data={buildChartData(rawEvents, ['Closing geführt','Als Kunden gewonnen','Closing No Show','Closing Follow Up'], filter, customFrom, customTo)}
+                kpiKeys={['Closing geführt','Als Kunden gewonnen','Closing No Show','Closing Follow Up']}
+              />
             </section>
           </>
         )}

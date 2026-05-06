@@ -809,8 +809,9 @@ export default function DashboardPage() {
                 <RateCard label="Erreichte Personen → Entscheider"  numeratorLabel="Entscheider"         denominatorLabel="Erreichte Personen"  rate={rate('Entscheider', 'Erreichte Personen')} />
                 <RateCard label="Anwahlen → Entscheider"            numeratorLabel="Entscheider"         denominatorLabel="Anwahlen"            rate={rate('Entscheider', 'Anwahlen')} />
                 <RateCard label="Entscheider → Termin vereinbart"   numeratorLabel="Termin vereinbart"   denominatorLabel="Entscheider"         rate={rate('Termin vereinbart', 'Entscheider')} />
-                <RateCard label="Pitch → Nach Termin gefragt"       numeratorLabel="Nach Termin gefragt" denominatorLabel="Pitch"               rate={rate('Nach Termin gefragt', 'Pitch')} />
-                <RateCard label="Termin vereinbart → Qualifying"    numeratorLabel="Qualifying"          denominatorLabel="Termin vereinbart"   rate={rate('Qualifying', 'Termin vereinbart')} />
+                <RateCard label="Pitch → Nach Termin gefragt"          numeratorLabel="Nach Termin gefragt" denominatorLabel="Pitch"           rate={rate('Nach Termin gefragt', 'Pitch')} />
+                <RateCard label="Termin vereinbart → Nachqualifizierung" numeratorLabel="Nachqualifizierung" denominatorLabel="Termin vereinbart" rate={rate('Nachqualifizierung', 'Termin vereinbart')} />
+                <RateCard label="Entscheider → Qualifying"          numeratorLabel="Qualifying"          denominatorLabel="Entscheider"         rate={rate('Qualifying', 'Entscheider')} />
               </div>
             </section>
             <section>

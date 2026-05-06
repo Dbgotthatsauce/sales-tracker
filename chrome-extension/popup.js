@@ -534,6 +534,58 @@ function initTracker(accessToken, userId) {
   document.getElementById('betragInput').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') submitBetrag()
   })
+
+  // ── Gesprächs-Checkliste ─────────────────────────────────
+  const CHECKLIST_KEY = 'st_checklist'
+
+  function loadChecklist() {
+    try { return JSON.parse(localStorage.getItem(CHECKLIST_KEY)) ?? {} } catch { return {} }
+  }
+  function saveChecklist(state) {
+    localStorage.setItem(CHECKLIST_KEY, JSON.stringify(state))
+  }
+
+  function renderChecklist() {
+    const state = loadChecklist()
+    document.querySelectorAll('.checklist-item').forEach(item => {
+      const key      = item.dataset.check
+      const required = parseInt(item.dataset.required ?? '1', 10)
+      const count    = state[key] ?? 0
+      const checked  = count >= required
+
+      item.classList.toggle('checked', checked)
+
+      const checkEl = item.querySelector('.checklist-check')
+      checkEl.textContent = checked ? '✓' : ''
+
+      const countEl = item.querySelector('.checklist-count')
+      if (countEl) countEl.textContent = `${count}/${required}`
+    })
+  }
+
+  document.querySelectorAll('.checklist-item').forEach(item => {
+    item.addEventListener('click', async () => {
+      const key       = item.dataset.check
+      const eventType = item.dataset.event
+      const required  = parseInt(item.dataset.required ?? '1', 10)
+      const state     = loadChecklist()
+      const current   = state[key] ?? 0
+      if (required === 1 && current >= 1) return   // einfache Items: kein Re-Click
+      state[key] = current + 1
+      saveChecklist(state)
+      renderChecklist()
+      if (eventType) {
+        try { await trackEventWithAuth(eventType, 1) } catch (_) { /* still loca */ }
+      }
+    })
+  })
+
+  document.getElementById('checklistResetBtn').addEventListener('click', () => {
+    localStorage.removeItem(CHECKLIST_KEY)
+    renderChecklist()
+  })
+
+  renderChecklist()
 }
 
 // =============================================================

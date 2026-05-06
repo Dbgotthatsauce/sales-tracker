@@ -8,7 +8,7 @@ import {
   BookOpen, Target, CalendarCheck, CalendarX, RefreshCw,
   XCircle, Ghost, PhoneForwarded, CheckCheck, MessageSquare,
   FolderSync, CalendarPlus, Trophy, Euro, Search, LogOut,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, ClipboardList,
 } from 'lucide-react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -797,6 +797,7 @@ export default function DashboardPage() {
                 <KpiCard label="Pitch"                  value={get('Pitch')}                    icon={<Target size={16} />} />
                 <KpiCard label="Nach Termin gefragt"    value={get('Nach Termin gefragt')}      icon={<CalendarCheck size={16} />} />
                 <KpiCard label="Termin vereinbart"      value={get('Termin vereinbart')}        icon={<CheckCheck size={16} />} />
+                <KpiCard label="Qualifying"             value={get('Qualifying')}               icon={<ClipboardList size={16} />} />
                 <KpiCard label="Nachqualifizierung"     value={get('Nachqualifizierung')}       icon={<Search size={16} />} />
               </div>
             </section>
@@ -809,13 +810,14 @@ export default function DashboardPage() {
                 <RateCard label="Anwahlen → Entscheider"            numeratorLabel="Entscheider"         denominatorLabel="Anwahlen"            rate={rate('Entscheider', 'Anwahlen')} />
                 <RateCard label="Entscheider → Termin vereinbart"   numeratorLabel="Termin vereinbart"   denominatorLabel="Entscheider"         rate={rate('Termin vereinbart', 'Entscheider')} />
                 <RateCard label="Pitch → Nach Termin gefragt"       numeratorLabel="Nach Termin gefragt" denominatorLabel="Pitch"               rate={rate('Nach Termin gefragt', 'Pitch')} />
+                <RateCard label="Termin vereinbart → Qualifying"    numeratorLabel="Qualifying"          denominatorLabel="Termin vereinbart"   rate={rate('Qualifying', 'Termin vereinbart')} />
               </div>
             </section>
             <section>
               <SectionHeading title="Verlauf" subtitle={`KPI-Entwicklung · ${FILTER_LABELS[filter]}`} />
               <KpiTrendChart
-                data={buildChartData(rawEvents, ['Anwahlen','Erreichte Personen','Entscheider','Termin vereinbart'], filter, customFrom, customTo)}
-                kpiKeys={['Anwahlen','Erreichte Personen','Entscheider','Termin vereinbart']}
+                data={buildChartData(rawEvents, ['Anwahlen','Erreichte Personen','Entscheider','Termin vereinbart','Qualifying'], filter, customFrom, customTo)}
+                kpiKeys={['Anwahlen','Erreichte Personen','Entscheider','Termin vereinbart','Qualifying']}
               />
             </section>
           </>

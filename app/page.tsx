@@ -8,7 +8,7 @@ import {
   BookOpen, Target, CalendarCheck, CalendarX, RefreshCw,
   XCircle, Ghost, PhoneForwarded, CheckCheck, MessageSquare,
   FolderSync, CalendarPlus, Trophy, Euro, Search, LogOut,
-  ChevronLeft, ChevronRight, ClipboardList,
+  ChevronLeft, ChevronRight, ClipboardList, CalendarClock,
 } from 'lucide-react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -834,6 +834,7 @@ export default function DashboardPage() {
                 <KpiCard label="Setting Unqualifiziert" value={get('Setting Unqualifiziert')} icon={<XCircle size={16} />} />
                 <KpiCard label="No Show"                value={get('No Show')}                icon={<Ghost size={16} />} />
                 <KpiCard label="Setting Follow Up"      value={get('Setting Follow Up')}      icon={<RefreshCw size={16} />} />
+                <KpiCard label="Setting verschoben"     value={get('Setting verschoben')}     icon={<CalendarClock size={16} />} />
                 <KpiCard label="Closing terminiert"     value={get('Closing terminiert')}     icon={<PhoneForwarded size={16} />} />
               </div>
             </section>
@@ -841,6 +842,7 @@ export default function DashboardPage() {
               <SectionHeading title="Quoten" subtitle="Conversion Rates Setting" />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <RateCard label="Setting → Closing (terminiert)" numeratorLabel="Closing terminiert"     denominatorLabel="Setting geführt"   rate={rate('Closing terminiert', 'Setting geführt')} />
+                <RateCard label="Setting → verschoben"           numeratorLabel="Setting verschoben"     denominatorLabel="Setting geführt"   rate={rate('Setting verschoben', 'Setting geführt')} />
                 <RateCard label="Setting → Unqualifiziert"       numeratorLabel="Setting Unqualifiziert" denominatorLabel="Setting geführt"   rate={rate('Setting Unqualifiziert', 'Setting geführt')} />
                 <RateCard label="Termin vereinbart → No Show"    numeratorLabel="No Show"                denominatorLabel="Termin vereinbart" rate={rate('No Show', 'Termin vereinbart')} />
               </div>
@@ -889,12 +891,14 @@ export default function DashboardPage() {
                 <KpiCard label="Folgebesprechung ver."    value={get('Folgebesprechung vereinbart')} icon={<CalendarPlus size={16} />} />
                 <KpiCard label="Folgebesprechung No Show" value={get('Folgebesprechung No Show')}  icon={<CalendarX size={16} />} />
                 <KpiCard label="Als Kunden gewonnen"      value={get('Als Kunden gewonnen')}       icon={<Trophy size={16} />} />
+                <KpiCard label="Nicht als Kunden gewonnen" value={get('Nicht als Kunden gewonnen')} icon={<XCircle size={16} />} />
               </div>
             </section>
             <section>
               <SectionHeading title="Quoten" subtitle="Conversion Rates Closing" />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <RateCard label="Closing geführt → Kunden gewonnen"       numeratorLabel="Als Kunden gewonnen"        denominatorLabel="Closing geführt"              rate={rate('Als Kunden gewonnen', 'Closing geführt')} />
+                <RateCard label="Closing geführt → Nicht gewonnen"        numeratorLabel="Nicht als Kunden gewonnen"  denominatorLabel="Closing geführt"              rate={rate('Nicht als Kunden gewonnen', 'Closing geführt')} />
                 <RateCard label="Closing vereinbart → No Show Rate"        numeratorLabel="Closing No Show"            denominatorLabel="Closing terminiert"           rate={rate('Closing No Show', 'Closing terminiert')} />
                 <RateCard label="Closing No Show → Folgebesprechung ver."  numeratorLabel="Folgebesprechung vereinbart" denominatorLabel="Closing No Show"             rate={rate('Folgebesprechung vereinbart', 'Closing No Show')} />
                 <RateCard label="No Show → Follow Up (gesamt)"             numeratorLabel="Setting FU + Closing FU"   denominatorLabel="No Show + Closing No Show"    rate={rateRaw(get('Setting Follow Up') + get('Closing Follow Up'), get('No Show') + get('Closing No Show'))} />

@@ -271,7 +271,7 @@ function playSound(type) {
 }
 
 function triggerCelebration(eventType, originEl) {
-  if (eventType === 'Termin vereinbart') {
+  if (eventType === 'Termin vereinbart' || eventType === 'Email: Termin vereinbart') {
     spawnConfetti(originEl)
     playSound('termin')
   } else if (eventType === 'Als Kunden gewonnen') {
@@ -399,6 +399,16 @@ function initTracker(accessToken, userId) {
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'))
       tab.classList.add('active')
       document.getElementById(tab.dataset.tab).classList.add('active')
+    })
+  })
+
+  // ── Kanal-Umschaltung (innerhalb Leads) ──────────────────
+  document.querySelectorAll('.channel-tab').forEach(chTab => {
+    chTab.addEventListener('click', () => {
+      document.querySelectorAll('.channel-tab').forEach(t => t.classList.remove('active'))
+      document.querySelectorAll('.channel-panel').forEach(p => p.classList.remove('active'))
+      chTab.classList.add('active')
+      document.getElementById(`channel-${chTab.dataset.channel}`).classList.add('active')
     })
   })
 
@@ -564,7 +574,8 @@ function initTracker(accessToken, userId) {
   }
 
   document.querySelectorAll('.checklist-item').forEach(item => {
-    item.addEventListener('click', async () => {
+    item.addEventListener('click', async (e) => {
+      if (e.target.closest('.checklist-undo')) return  // Undo-Button abfangen
       const key       = item.dataset.check
       const eventType = item.dataset.event
       const required  = parseInt(item.dataset.required ?? '1', 10)
@@ -575,7 +586,25 @@ function initTracker(accessToken, userId) {
       saveChecklist(state)
       renderChecklist()
       if (eventType) {
-        try { await trackEventWithAuth(eventType, 1) } catch (_) { /* still loca */ }
+        try { await trackEventWithAuth(eventType, 1) } catch (_) {}
+      }
+    })
+  })
+
+  document.querySelectorAll('.checklist-undo').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation()
+      const key     = btn.dataset.undo
+      const item    = btn.closest('.checklist-item')
+      const eventType = item?.dataset.event
+      const state   = loadChecklist()
+      const current = state[key] ?? 0
+      if (current <= 0) return
+      state[key] = current - 1
+      saveChecklist(state)
+      renderChecklist()
+      if (eventType) {
+        try { await trackEventWithAuth(eventType, -1) } catch (_) {}
       }
     })
   })
@@ -586,6 +615,63 @@ function initTracker(accessToken, userId) {
   })
 
   renderChecklist()
+
+  // ── Skript-Editor ────────────────────────────────────────
+  const SCRIPT_PREFIX = 'st_script_'
+
+  ;['cold-calling', 'setting', 'closing'].forEach(tabId => {
+    const editor = document.getElementById(`script-${tabId}`)
+    if (!editor) return
+
+    const saved = localStorage.getItem(SCRIPT_PREFIX + tabId)
+    if (saved) editor.innerHTML = saved
+
+    editor.addEventListener('paste', (e) => {
+      e.preventDefault()
+      const text = (e.clipboardData || window.clipboardData).getData('text/plain')
+      document.execCommand('insertText', false, text)
+    })
+
+    editor.addEventListener('input', () => {
+      clearTimeout(editor._saveTimer)
+      editor._saveTimer = setTimeout(() => {
+        localStorage.setItem(SCRIPT_PREFIX + tabId, editor.innerHTML)
+      }, 400)
+    })
+
+    editor.addEventListener('blur', () => {
+      clearTimeout(editor._saveTimer)
+      localStorage.setItem(SCRIPT_PREFIX + tabId, editor.innerHTML)
+    })
+  })
+
+  document.querySelectorAll('.script-tool-btn').forEach(btn => {
+    // mousedown verhindert, dass der Editor den Fokus verliert
+    btn.addEventListener('mousedown', (e) => e.preventDefault())
+
+    btn.addEventListener('click', () => {
+      document.execCommand(btn.dataset.cmd, false, null)
+      // Aktiven Zustand der Toolbar-Buttons aktualisieren
+      updateScriptToolbarState()
+    })
+  })
+
+  function updateScriptToolbarState() {
+    document.querySelectorAll('.script-tool-btn').forEach(btn => {
+      const cmd = btn.dataset.cmd
+      if (cmd === 'insertUnorderedList') {
+        btn.classList.toggle('active', document.queryCommandState('insertUnorderedList'))
+      } else {
+        btn.classList.toggle('active', document.queryCommandState(cmd))
+      }
+    })
+  }
+
+  document.querySelectorAll('.script-editor').forEach(editor => {
+    editor.addEventListener('keyup', updateScriptToolbarState)
+    editor.addEventListener('mouseup', updateScriptToolbarState)
+    editor.addEventListener('selectionchange', updateScriptToolbarState)
+  })
 }
 
 // =============================================================

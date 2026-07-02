@@ -5,13 +5,14 @@
 -- -------------------------------------------------------------
 -- ENUM-ähnliche Einschränkung via CHECK für erlaubte event_types
 -- -------------------------------------------------------------
--- Erlaubte Werte:
---   Anwahlen, Erreichte Personen, Entscheider, Intro, Short Story,
---   Pitch, Nach Termin gefragt, Termin vereinbart, Nachqualifizierung,
---   An Vorzimmer gescheitert, Setting geführt, Setting Unqualifiziert,
---   No Show, Setting Follow Up, Closing terminiert, Closing geführt,
---   Closing No Show, Closing Follow Up, Folgebesprechung vereinbart,
---   Folgebesprechung No Show, Als Kunden gewonnen, Betrag
+-- Die vollständige Liste der erlaubten event_type-Werte steht in der
+-- CHECK-Constraint weiter unten (gruppiert nach Bereich Leads → Kanäle
+-- Cold Calling / Email, Setting, Closing).
+--
+-- Kanal-Trennung: Email-KPIs, die namensgleich mit Cold-Calling-KPIs
+-- sind (z. B. "Erreichte Personen", "Termin vereinbart"), werden über
+-- den Präfix "Email: " als eigener Kanal geführt, damit die Aggregation
+-- im Dashboard beide Kanäle getrennt auswertet.
 
 -- -------------------------------------------------------------
 -- Dashboard-Quoten (für spätere Implementierung):
@@ -46,6 +47,7 @@ CREATE TABLE IF NOT EXISTS public.tracking_events (
 
     CONSTRAINT tracking_events_event_type_check CHECK (
         event_type IN (
+            -- Kanal: Cold Calling
             'Anwahlen',
             'Erreichte Personen',
             'Entscheider',
@@ -56,17 +58,35 @@ CREATE TABLE IF NOT EXISTS public.tracking_events (
             'Termin vereinbart',
             'Nachqualifizierung',
             'An Vorzimmer gescheitert',
+            'Qualifying',
+            -- Kanal: Email
+            'Email: Positive Replys',
+            'Email: Erreichte Personen',
+            'Email: Entscheider erreicht',
+            'Email: Termin vereinbart',
+            'Email: Kein Termin vereinbart',
+            -- Setting
             'Setting geführt',
             'Setting Unqualifiziert',
             'No Show',
             'Setting Follow Up',
+            'Setting verschoben',
             'Closing terminiert',
+            -- Setting-Checkliste
+            'Pain-Frage',
+            'Budget erfasst',
+            'Entscheider erfragt',
+            'Startpunkt erfasst',
+            'Testabschluss 1',
+            'Testabschluss 2',
+            -- Closing
             'Closing geführt',
             'Closing No Show',
             'Closing Follow Up',
             'Folgebesprechung vereinbart',
             'Folgebesprechung No Show',
             'Als Kunden gewonnen',
+            'Nicht als Kunden gewonnen',
             'Betrag'
         )
     )

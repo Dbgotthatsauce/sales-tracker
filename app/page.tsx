@@ -9,6 +9,7 @@ import {
   XCircle, Ghost, PhoneForwarded, CheckCheck, MessageSquare,
   FolderSync, CalendarPlus, Trophy, Euro, Search, LogOut,
   ChevronLeft, ChevronRight, ClipboardList, CalendarClock,
+  MailCheck,
 } from 'lucide-react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -476,7 +477,8 @@ export default function DashboardPage() {
   const [showPicker, setShowPicker]       = useState(false)
   const [users, setUsers]                 = useState<UserProfile[]>([])
   const [selectedUserId, setSelectedUserId] = useState<string>('all')
-  const [activeTab, setActiveTab]         = useState<'cold-calling' | 'setting' | 'closing'>('cold-calling')
+  const [activeTab, setActiveTab]         = useState<'leads' | 'setting' | 'closing'>('leads')
+  const [leadChannel, setLeadChannel]     = useState<'cold-calling' | 'email'>('cold-calling')
 
   // ── Auth-Check beim ersten Laden ──────────────────────────
   useEffect(() => {
@@ -735,9 +737,9 @@ export default function DashboardPage() {
           {/* Tab-Leiste */}
           <div className="flex border-b border-slate-800 -mb-4">
             {([
-              { id: 'cold-calling', label: 'Cold Calling' },
-              { id: 'setting',      label: 'Setting'      },
-              { id: 'closing',      label: 'Closing'      },
+              { id: 'leads',   label: 'Leads'   },
+              { id: 'setting', label: 'Setting' },
+              { id: 'closing', label: 'Closing' },
             ] as const).map(({ id, label }) => (
               <button
                 key={id}
@@ -782,9 +784,33 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* ── Tab: Cold Calling ───────────────────────────────── */}
-        {!loading && activeTab === 'cold-calling' && (
+        {/* ── Tab: Leads ──────────────────────────────────────── */}
+        {!loading && activeTab === 'leads' && (
           <>
+            {/* Kanal-Auswahl */}
+            <div className="flex items-center gap-1 p-1 bg-slate-900 border border-slate-700 rounded-xl w-fit">
+              {([
+                { id: 'cold-calling', label: 'Cold Calling' },
+                { id: 'email',        label: 'Email'        },
+              ] as const).map(({ id, label }) => (
+                <button
+                  key={id}
+                  onClick={() => setLeadChannel(id)}
+                  className={[
+                    'px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer',
+                    leadChannel === id
+                      ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-900'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800',
+                  ].join(' ')}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* ── Kanal: Cold Calling ─────────────────────────── */}
+            {leadChannel === 'cold-calling' && (
+              <>
             <section>
               <SectionHeading title="Aktivitäten" subtitle="Cold Calling KPIs" />
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -821,6 +847,41 @@ export default function DashboardPage() {
                 kpiKeys={['Anwahlen','Erreichte Personen','Entscheider','Termin vereinbart','Qualifying']}
               />
             </section>
+              </>
+            )}
+
+            {/* ── Kanal: Email ────────────────────────────────── */}
+            {leadChannel === 'email' && (
+              <>
+            <section>
+              <SectionHeading title="Aktivitäten" subtitle="Email KPIs" />
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                <KpiCard label="Positive Email Replys" value={get('Email: Positive Replys')}         icon={<MailCheck size={16} />} />
+                <KpiCard label="Erreichte Personen"    value={get('Email: Erreichte Personen')}      icon={<UserCheck size={16} />} />
+                <KpiCard label="Entscheider erreicht"  value={get('Email: Entscheider erreicht')}    icon={<Briefcase size={16} />} />
+                <KpiCard label="Termin vereinbart"     value={get('Email: Termin vereinbart')}       icon={<CheckCheck size={16} />} />
+                <KpiCard label="Kein Termin vereinbart" value={get('Email: Kein Termin vereinbart')} icon={<CalendarX size={16} />} />
+              </div>
+            </section>
+            <section>
+              <SectionHeading title="Quoten" subtitle="Conversion Rates Email" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <RateCard label="Positive Replys → Erreichte Personen"    numeratorLabel="Erreichte Personen"   denominatorLabel="Positive Replys"      rate={rate('Email: Erreichte Personen', 'Email: Positive Replys')} />
+                <RateCard label="Erreichte Personen → Entscheider"        numeratorLabel="Entscheider erreicht" denominatorLabel="Erreichte Personen"   rate={rate('Email: Entscheider erreicht', 'Email: Erreichte Personen')} />
+                <RateCard label="Entscheider → Termin vereinbart"         numeratorLabel="Termin vereinbart"    denominatorLabel="Entscheider erreicht" rate={rate('Email: Termin vereinbart', 'Email: Entscheider erreicht')} />
+                <RateCard label="Positive Replys → Termin vereinbart"     numeratorLabel="Termin vereinbart"    denominatorLabel="Positive Replys"      rate={rate('Email: Termin vereinbart', 'Email: Positive Replys')} />
+                <RateCard label="Terminquote (Termin ÷ Termin + Kein)"    numeratorLabel="Termin vereinbart"    denominatorLabel="Termin + Kein Termin" rate={rateRaw(get('Email: Termin vereinbart'), get('Email: Termin vereinbart') + get('Email: Kein Termin vereinbart'))} />
+              </div>
+            </section>
+            <section>
+              <SectionHeading title="Verlauf" subtitle={`KPI-Entwicklung · ${FILTER_LABELS[filter]}`} />
+              <KpiTrendChart
+                data={buildChartData(rawEvents, ['Email: Positive Replys','Email: Erreichte Personen','Email: Entscheider erreicht','Email: Termin vereinbart'], filter, customFrom, customTo)}
+                kpiKeys={['Email: Positive Replys','Email: Erreichte Personen','Email: Entscheider erreicht','Email: Termin vereinbart']}
+              />
+            </section>
+              </>
+            )}
           </>
         )}
 

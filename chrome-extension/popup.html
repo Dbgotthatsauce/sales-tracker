@@ -51,7 +51,7 @@
 
     <!-- Tab Navigation -->
     <nav class="tabs">
-      <button class="tab active" data-tab="cold-calling">Cold Calling</button>
+      <button class="tab active" data-tab="leads">Leads</button>
       <button class="tab" data-tab="setting">Setting</button>
       <button class="tab" data-tab="closing">Closing</button>
     </nav>
@@ -65,8 +65,17 @@
     <!-- Toast Notification -->
     <div id="toast" class="toast hidden"></div>
 
-    <!-- ── COLD CALLING ─────────────────────────────────────────── -->
-    <section id="cold-calling" class="panel active">
+    <!-- ── LEADS ─────────────────────────────────────────────────── -->
+    <section id="leads" class="panel active">
+
+      <!-- Kanal-Auswahl -->
+      <nav class="channel-tabs">
+        <button class="channel-tab active" data-channel="cold-calling">Cold Calling</button>
+        <button class="channel-tab" data-channel="email">Email</button>
+      </nav>
+
+      <!-- ── Kanal: Cold Calling ─────────────────────────────────── -->
+      <div class="channel-panel active" id="channel-cold-calling">
       <div class="btn-grid">
 
         <button class="kpi-btn" data-event="Anwahlen">
@@ -136,6 +145,59 @@
         </button>
 
       </div>
+
+      <!-- Skript-Editor Cold Calling -->
+      <div class="script-section">
+        <div class="script-header">
+          <span class="script-title">Skript</span>
+          <div class="script-toolbar">
+            <button class="script-tool-btn" data-cmd="bold" title="Fett (Strg+B)"><b>B</b></button>
+            <button class="script-tool-btn" data-cmd="italic" title="Kursiv (Strg+I)"><i>I</i></button>
+            <button class="script-tool-btn" data-cmd="underline" title="Unterstrichen (Strg+U)"><u>U</u></button>
+            <button class="script-tool-btn" data-cmd="insertUnorderedList" title="Liste">≡</button>
+          </div>
+        </div>
+        <div class="script-editor" id="script-cold-calling" contenteditable="true" data-placeholder="Cold Calling Skript hier eingeben…"></div>
+      </div>
+      </div><!-- /channel-cold-calling -->
+
+      <!-- ── Kanal: Email ────────────────────────────────────────── -->
+      <div class="channel-panel" id="channel-email">
+        <div class="btn-grid">
+
+          <button class="kpi-btn" data-event="Email: Positive Replys">
+            <span class="kpi-icon">📧</span>
+            <span class="kpi-label">Positive Email Replys</span>
+            <input class="counter-input" type="number" value="0" min="0" />
+          </button>
+
+          <button class="kpi-btn" data-event="Email: Erreichte Personen">
+            <span class="kpi-icon">🙋</span>
+            <span class="kpi-label">Erreichte Personen</span>
+            <input class="counter-input" type="number" value="0" min="0" />
+          </button>
+
+          <button class="kpi-btn" data-event="Email: Entscheider erreicht">
+            <span class="kpi-icon">👔</span>
+            <span class="kpi-label">Entscheider erreicht</span>
+            <input class="counter-input" type="number" value="0" min="0" />
+          </button>
+
+          <button class="kpi-btn" data-event="Email: Termin vereinbart">
+            <span class="kpi-icon">✅</span>
+            <span class="kpi-label">Termin vereinbart</span>
+            <input class="counter-input" type="number" value="0" min="0" />
+          </button>
+
+          <button class="kpi-btn" data-event="Email: Kein Termin vereinbart">
+            <span class="kpi-icon">❌</span>
+            <span class="kpi-label">Kein Termin vereinbart</span>
+            <input class="counter-input" type="number" value="0" min="0" />
+          </button>
+
+        </div>
+      </div><!-- /channel-email -->
+
     </section>
 
     <!-- ── SETTING ───────────────────────────────────────────────── -->
@@ -166,6 +228,12 @@
           <input class="counter-input" type="number" value="0" min="0" />
         </button>
 
+        <button class="kpi-btn" data-event="Setting verschoben">
+          <span class="kpi-icon">⏭️</span>
+          <span class="kpi-label">Setting verschoben</span>
+          <input class="counter-input" type="number" value="0" min="0" />
+        </button>
+
         <button class="kpi-btn" data-event="Closing terminiert">
           <span class="kpi-icon">📅</span>
           <span class="kpi-label">Closing terminiert</span>
@@ -185,28 +253,48 @@
             <span class="checklist-check"></span>
             <span class="checklist-label">Pain-Frage</span>
             <span class="checklist-count">0/3</span>
+            <span class="checklist-undo" data-undo="pain-frage">−</span>
           </button>
           <button class="checklist-item" data-check="budget" data-event="Budget erfasst">
             <span class="checklist-check"></span>
             <span class="checklist-label">Budget erfasst</span>
+            <span class="checklist-undo" data-undo="budget">−</span>
           </button>
           <button class="checklist-item" data-check="entscheider" data-event="Entscheider erfragt">
             <span class="checklist-check"></span>
             <span class="checklist-label">Entscheider erfragt</span>
+            <span class="checklist-undo" data-undo="entscheider">−</span>
           </button>
           <button class="checklist-item" data-check="startpunkt" data-event="Startpunkt erfasst">
             <span class="checklist-check"></span>
             <span class="checklist-label">Startpunkt erfasst</span>
+            <span class="checklist-undo" data-undo="startpunkt">−</span>
           </button>
           <button class="checklist-item" data-check="testabschluss1" data-event="Testabschluss 1">
             <span class="checklist-check"></span>
             <span class="checklist-label">Testabschluss 1</span>
+            <span class="checklist-undo" data-undo="testabschluss1">−</span>
           </button>
           <button class="checklist-item" data-check="testabschluss2" data-event="Testabschluss 2">
             <span class="checklist-check"></span>
             <span class="checklist-label">Testabschluss 2</span>
+            <span class="checklist-undo" data-undo="testabschluss2">−</span>
           </button>
         </div>
+      </div>
+
+      <!-- Skript-Editor Setting -->
+      <div class="script-section">
+        <div class="script-header">
+          <span class="script-title">Skript</span>
+          <div class="script-toolbar">
+            <button class="script-tool-btn" data-cmd="bold" title="Fett (Strg+B)"><b>B</b></button>
+            <button class="script-tool-btn" data-cmd="italic" title="Kursiv (Strg+I)"><i>I</i></button>
+            <button class="script-tool-btn" data-cmd="underline" title="Unterstrichen (Strg+U)"><u>U</u></button>
+            <button class="script-tool-btn" data-cmd="insertUnorderedList" title="Liste">≡</button>
+          </div>
+        </div>
+        <div class="script-editor" id="script-setting" contenteditable="true" data-placeholder="Setting Skript hier eingeben…"></div>
       </div>
 
     </section>
@@ -251,6 +339,12 @@
           <input class="counter-input" type="number" value="0" min="0" />
         </button>
 
+        <button class="kpi-btn" data-event="Nicht als Kunden gewonnen">
+          <span class="kpi-icon">🚫</span>
+          <span class="kpi-label">Nicht als Kunden gewonnen</span>
+          <input class="counter-input" type="number" value="0" min="0" />
+        </button>
+
         <!-- Betrag: eigene Zeile -->
         <div class="betrag-row">
           <label class="betrag-label">💶 Betrag (€)</label>
@@ -261,6 +355,21 @@
         </div>
 
       </div>
+
+      <!-- Skript-Editor Closing -->
+      <div class="script-section">
+        <div class="script-header">
+          <span class="script-title">Skript</span>
+          <div class="script-toolbar">
+            <button class="script-tool-btn" data-cmd="bold" title="Fett (Strg+B)"><b>B</b></button>
+            <button class="script-tool-btn" data-cmd="italic" title="Kursiv (Strg+I)"><i>I</i></button>
+            <button class="script-tool-btn" data-cmd="underline" title="Unterstrichen (Strg+U)"><u>U</u></button>
+            <button class="script-tool-btn" data-cmd="insertUnorderedList" title="Liste">≡</button>
+          </div>
+        </div>
+        <div class="script-editor" id="script-closing" contenteditable="true" data-placeholder="Closing Skript hier eingeben…"></div>
+      </div>
+
     </section>
 
   </div>

@@ -256,6 +256,32 @@ html, body {
 }
 .panel.active { display: block; }
 
+/* ── Kanal-Umschaltung (innerhalb Leads) ──────────────────── */
+.channel-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.channel-tab {
+  flex: 1;
+  padding: 7px 4px;
+  background: #0d1117;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.channel-tab:hover  { background: #1e293b; color: #94a3b8; }
+.channel-tab.active { color: #c7d2fe; background: #312e81; border-color: #6366f1; }
+
+.channel-panel { display: none; }
+.channel-panel.active { display: block; }
+
 /* ── Button Grid ──────────────────────────────────────────── */
 .btn-grid {
   display: grid;
@@ -456,6 +482,36 @@ html, body {
 }
 .checklist-item.checked .checklist-count { color: #4ade80; }
 
+.checklist-undo {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #334155;
+  background: none;
+  border: 1px solid #1e293b;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  opacity: 0;
+  pointer-events: none;
+}
+.checklist-item:hover .checklist-undo,
+.checklist-item.checked .checklist-undo {
+  opacity: 1;
+  pointer-events: auto;
+}
+.checklist-undo:hover {
+  color: #f87171;
+  border-color: #7f1d1d;
+  background: #2d1515;
+}
+
 /* ── Betrag-Widget ────────────────────────────────────────── */
 .betrag-row {
   grid-column: 1 / -1;
@@ -525,3 +581,89 @@ html, body {
   color: #334155;
   cursor: not-allowed;
 }
+
+/* ── Skript-Editor ────────────────────────────────────────── */
+.script-section {
+  margin-top: 12px;
+}
+
+.script-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 7px;
+}
+
+.script-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.script-toolbar {
+  display: flex;
+  gap: 4px;
+}
+
+.script-tool-btn {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #161b27;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  color: #64748b;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  line-height: 1;
+  user-select: none;
+}
+.script-tool-btn:hover {
+  background: #1e293b;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+.script-tool-btn.active {
+  background: #2d3a4f;
+  border-color: #6366f1;
+  color: #818cf8;
+}
+
+.script-editor {
+  width: 100%;
+  min-height: 130px;
+  padding: 10px 12px;
+  background: #161b27;
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 1.6;
+  outline: none;
+  transition: border-color 0.15s;
+  cursor: text;
+  word-break: break-word;
+  overflow-y: auto;
+}
+.script-editor:focus {
+  border-color: #334155;
+}
+.script-editor:empty::before {
+  content: attr(data-placeholder);
+  color: #334155;
+  pointer-events: none;
+}
+
+.script-editor b, .script-editor strong { font-weight: 700; color: #e2e8f0; }
+.script-editor i, .script-editor em     { font-style: italic; }
+.script-editor u                        { text-decoration: underline; }
+.script-editor ul {
+  padding-left: 18px;
+  margin: 4px 0;
+}
+.script-editor li { margin: 2px 0; }

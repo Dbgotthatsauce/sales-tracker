@@ -65,6 +65,19 @@ CREATE TABLE IF NOT EXISTS public.tracking_events (
             'Email: Entscheider erreicht',
             'Email: Termin vereinbart',
             'Email: Kein Termin vereinbart',
+            -- Kanal: Instagram
+            'Instagram: Nachrichten gesendet',
+            'Instagram: Positive Replys',
+            'Instagram: Erreichte Personen',
+            'Instagram: Entscheider erreicht',
+            'Instagram: Termin vereinbart',
+            'Instagram: Kein Termin vereinbart',
+            -- Kanal: Inbound
+            'Inbound: Anfrage',
+            'Inbound: Erreichte Personen',
+            'Inbound: Entscheider erreicht',
+            'Inbound: Termin vereinbart',
+            'Inbound: Kein Termin vereinbart',
             -- Setting
             'Setting geführt',
             'Setting Unqualifiziert',

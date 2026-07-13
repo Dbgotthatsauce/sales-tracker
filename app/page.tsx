@@ -9,7 +9,7 @@ import {
   XCircle, Ghost, PhoneForwarded, CheckCheck, MessageSquare,
   FolderSync, CalendarPlus, Trophy, Euro, Search, LogOut,
   ChevronLeft, ChevronRight, ClipboardList, CalendarClock,
-  MailCheck,
+  MailCheck, Send, MessageCircle, Inbox,
 } from 'lucide-react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -57,6 +57,20 @@ function getStartDate(filter: Filter): Date | null {
   }
   return null
 }
+
+// ─── Gesamt-Aggregation (kanalübergreifend) ───────────────────
+// Vergleichbare Funnel-Stufen aller vier Kanäle werden zu je einer
+// Gesamt-Kennzahl zusammengezählt.
+const GESAMT_ERREICHT = ['Erreichte Personen', 'Email: Erreichte Personen', 'Instagram: Erreichte Personen', 'Inbound: Erreichte Personen']
+const GESAMT_ENTSCHEIDER = ['Entscheider', 'Email: Entscheider erreicht', 'Instagram: Entscheider erreicht', 'Inbound: Entscheider erreicht']
+const GESAMT_TERMIN = ['Termin vereinbart', 'Email: Termin vereinbart', 'Instagram: Termin vereinbart', 'Inbound: Termin vereinbart']
+const GESAMT_KEIN_TERMIN = ['Email: Kein Termin vereinbart', 'Instagram: Kein Termin vereinbart', 'Inbound: Kein Termin vereinbart']
+
+// Ordnet jeden Kanal-Event-Typ seiner Gesamt-Sammelkennzahl zu (für den Verlaufs-Chart)
+const GESAMT_REMAP: Record<string, string> = {}
+GESAMT_ERREICHT.forEach(k => { GESAMT_REMAP[k] = 'Erreichte Personen' })
+GESAMT_ENTSCHEIDER.forEach(k => { GESAMT_REMAP[k] = 'Entscheider' })
+GESAMT_TERMIN.forEach(k => { GESAMT_REMAP[k] = 'Termin vereinbart' })
 
 // ─── Chart helpers ────────────────────────────────────────────
 const CHART_COLORS = ['#6366f1', '#22d3ee', '#a78bfa', '#34d399', '#fb923c', '#f472b6']
@@ -478,7 +492,7 @@ export default function DashboardPage() {
   const [users, setUsers]                 = useState<UserProfile[]>([])
   const [selectedUserId, setSelectedUserId] = useState<string>('all')
   const [activeTab, setActiveTab]         = useState<'leads' | 'setting' | 'closing'>('leads')
-  const [leadChannel, setLeadChannel]     = useState<'cold-calling' | 'email'>('cold-calling')
+  const [leadChannel, setLeadChannel]     = useState<'cold-calling' | 'email' | 'instagram' | 'inbound' | 'gesamt'>('cold-calling')
 
   // ── Auth-Check beim ersten Laden ──────────────────────────
   useEffect(() => {
@@ -604,6 +618,9 @@ export default function DashboardPage() {
   }
 
   const get = (key: string) => totals[key] ?? 0
+
+  // Summe mehrerer Event-Typen (für kanalübergreifende Gesamt-Kennzahlen)
+  const getSum = (keys: string[]) => keys.reduce((s, k) => s + get(k), 0)
 
   const rate = (numKey: string, denKey: string): string => {
     const den = get(denKey)
@@ -792,6 +809,9 @@ export default function DashboardPage() {
               {([
                 { id: 'cold-calling', label: 'Cold Calling' },
                 { id: 'email',        label: 'Email'        },
+                { id: 'instagram',    label: 'Instagram'    },
+                { id: 'inbound',      label: 'Inbound'      },
+                { id: 'gesamt',       label: 'Gesamt'       },
               ] as const).map(({ id, label }) => (
                 <button
                   key={id}
@@ -878,6 +898,109 @@ export default function DashboardPage() {
               <KpiTrendChart
                 data={buildChartData(rawEvents, ['Email: Positive Replys','Email: Erreichte Personen','Email: Entscheider erreicht','Email: Termin vereinbart'], filter, customFrom, customTo)}
                 kpiKeys={['Email: Positive Replys','Email: Erreichte Personen','Email: Entscheider erreicht','Email: Termin vereinbart']}
+              />
+            </section>
+              </>
+            )}
+
+            {/* ── Kanal: Instagram ────────────────────────────── */}
+            {leadChannel === 'instagram' && (
+              <>
+            <section>
+              <SectionHeading title="Aktivitäten" subtitle="Instagram KPIs" />
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                <KpiCard label="Nachrichten gesendet"   value={get('Instagram: Nachrichten gesendet')}   icon={<Send size={16} />} />
+                <KpiCard label="Positive Replys"        value={get('Instagram: Positive Replys')}        icon={<MessageCircle size={16} />} />
+                <KpiCard label="Erreichte Personen"     value={get('Instagram: Erreichte Personen')}     icon={<UserCheck size={16} />} />
+                <KpiCard label="Entscheider erreicht"   value={get('Instagram: Entscheider erreicht')}   icon={<Briefcase size={16} />} />
+                <KpiCard label="Termin vereinbart"      value={get('Instagram: Termin vereinbart')}      icon={<CheckCheck size={16} />} />
+                <KpiCard label="Kein Termin vereinbart" value={get('Instagram: Kein Termin vereinbart')} icon={<CalendarX size={16} />} />
+              </div>
+            </section>
+            <section>
+              <SectionHeading title="Quoten" subtitle="Conversion Rates Instagram" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <RateCard label="Nachrichten → Positive Replys"          numeratorLabel="Positive Replys"      denominatorLabel="Nachrichten gesendet" rate={rate('Instagram: Positive Replys', 'Instagram: Nachrichten gesendet')} />
+                <RateCard label="Positive Replys → Erreichte Personen"   numeratorLabel="Erreichte Personen"   denominatorLabel="Positive Replys"      rate={rate('Instagram: Erreichte Personen', 'Instagram: Positive Replys')} />
+                <RateCard label="Erreichte Personen → Entscheider"       numeratorLabel="Entscheider erreicht" denominatorLabel="Erreichte Personen"   rate={rate('Instagram: Entscheider erreicht', 'Instagram: Erreichte Personen')} />
+                <RateCard label="Entscheider → Termin vereinbart"        numeratorLabel="Termin vereinbart"    denominatorLabel="Entscheider erreicht" rate={rate('Instagram: Termin vereinbart', 'Instagram: Entscheider erreicht')} />
+                <RateCard label="Positive Replys → Termin vereinbart"    numeratorLabel="Termin vereinbart"    denominatorLabel="Positive Replys"      rate={rate('Instagram: Termin vereinbart', 'Instagram: Positive Replys')} />
+                <RateCard label="Terminquote (Termin ÷ Termin + Kein)"   numeratorLabel="Termin vereinbart"    denominatorLabel="Termin + Kein Termin" rate={rateRaw(get('Instagram: Termin vereinbart'), get('Instagram: Termin vereinbart') + get('Instagram: Kein Termin vereinbart'))} />
+              </div>
+            </section>
+            <section>
+              <SectionHeading title="Verlauf" subtitle={`KPI-Entwicklung · ${FILTER_LABELS[filter]}`} />
+              <KpiTrendChart
+                data={buildChartData(rawEvents, ['Instagram: Nachrichten gesendet','Instagram: Positive Replys','Instagram: Erreichte Personen','Instagram: Termin vereinbart'], filter, customFrom, customTo)}
+                kpiKeys={['Instagram: Nachrichten gesendet','Instagram: Positive Replys','Instagram: Erreichte Personen','Instagram: Termin vereinbart']}
+              />
+            </section>
+              </>
+            )}
+
+            {/* ── Kanal: Inbound ──────────────────────────────── */}
+            {leadChannel === 'inbound' && (
+              <>
+            <section>
+              <SectionHeading title="Aktivitäten" subtitle="Inbound KPIs" />
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                <KpiCard label="Anfrage"                value={get('Inbound: Anfrage')}                icon={<Inbox size={16} />} />
+                <KpiCard label="Erreichte Personen"     value={get('Inbound: Erreichte Personen')}     icon={<UserCheck size={16} />} />
+                <KpiCard label="Entscheider erreicht"   value={get('Inbound: Entscheider erreicht')}   icon={<Briefcase size={16} />} />
+                <KpiCard label="Termin vereinbart"      value={get('Inbound: Termin vereinbart')}      icon={<CheckCheck size={16} />} />
+                <KpiCard label="Kein Termin vereinbart" value={get('Inbound: Kein Termin vereinbart')} icon={<CalendarX size={16} />} />
+              </div>
+            </section>
+            <section>
+              <SectionHeading title="Quoten" subtitle="Conversion Rates Inbound" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <RateCard label="Anfrage → Erreichte Personen"          numeratorLabel="Erreichte Personen"   denominatorLabel="Anfrage"              rate={rate('Inbound: Erreichte Personen', 'Inbound: Anfrage')} />
+                <RateCard label="Erreichte Personen → Entscheider"       numeratorLabel="Entscheider erreicht" denominatorLabel="Erreichte Personen"   rate={rate('Inbound: Entscheider erreicht', 'Inbound: Erreichte Personen')} />
+                <RateCard label="Entscheider → Termin vereinbart"        numeratorLabel="Termin vereinbart"    denominatorLabel="Entscheider erreicht" rate={rate('Inbound: Termin vereinbart', 'Inbound: Entscheider erreicht')} />
+                <RateCard label="Anfrage → Termin vereinbart"            numeratorLabel="Termin vereinbart"    denominatorLabel="Anfrage"              rate={rate('Inbound: Termin vereinbart', 'Inbound: Anfrage')} />
+                <RateCard label="Terminquote (Termin ÷ Termin + Kein)"   numeratorLabel="Termin vereinbart"    denominatorLabel="Termin + Kein Termin" rate={rateRaw(get('Inbound: Termin vereinbart'), get('Inbound: Termin vereinbart') + get('Inbound: Kein Termin vereinbart'))} />
+              </div>
+            </section>
+            <section>
+              <SectionHeading title="Verlauf" subtitle={`KPI-Entwicklung · ${FILTER_LABELS[filter]}`} />
+              <KpiTrendChart
+                data={buildChartData(rawEvents, ['Inbound: Anfrage','Inbound: Erreichte Personen','Inbound: Entscheider erreicht','Inbound: Termin vereinbart'], filter, customFrom, customTo)}
+                kpiKeys={['Inbound: Anfrage','Inbound: Erreichte Personen','Inbound: Entscheider erreicht','Inbound: Termin vereinbart']}
+              />
+            </section>
+              </>
+            )}
+
+            {/* ── Kanal: Gesamt (kanalübergreifend) ───────────── */}
+            {leadChannel === 'gesamt' && (
+              <>
+            <section>
+              <SectionHeading title="Aktivitäten" subtitle="Gesamt · Cold Calling + Email + Instagram + Inbound" />
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                <KpiCard label="Erreichte Personen"     value={getSum(GESAMT_ERREICHT)}     icon={<UserCheck size={16} />} />
+                <KpiCard label="Entscheider"            value={getSum(GESAMT_ENTSCHEIDER)}  icon={<Briefcase size={16} />} />
+                <KpiCard label="Termin vereinbart"      value={getSum(GESAMT_TERMIN)}       icon={<CheckCheck size={16} />} />
+                <KpiCard label="Kein Termin vereinbart" value={getSum(GESAMT_KEIN_TERMIN)}  icon={<CalendarX size={16} />} />
+              </div>
+            </section>
+            <section>
+              <SectionHeading title="Quoten" subtitle="Conversion Rates Gesamt" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <RateCard label="Erreichte Personen → Entscheider"     numeratorLabel="Entscheider"       denominatorLabel="Erreichte Personen"   rate={rateRaw(getSum(GESAMT_ENTSCHEIDER), getSum(GESAMT_ERREICHT))} />
+                <RateCard label="Entscheider → Termin vereinbart"      numeratorLabel="Termin vereinbart" denominatorLabel="Entscheider"          rate={rateRaw(getSum(GESAMT_TERMIN), getSum(GESAMT_ENTSCHEIDER))} />
+                <RateCard label="Erreichte Personen → Termin vereinbart" numeratorLabel="Termin vereinbart" denominatorLabel="Erreichte Personen" rate={rateRaw(getSum(GESAMT_TERMIN), getSum(GESAMT_ERREICHT))} />
+                <RateCard label="Terminquote (Termin ÷ Termin + Kein)"  numeratorLabel="Termin vereinbart" denominatorLabel="Termin + Kein Termin" rate={rateRaw(getSum(GESAMT_TERMIN), getSum(GESAMT_TERMIN) + getSum(GESAMT_KEIN_TERMIN))} />
+              </div>
+            </section>
+            <section>
+              <SectionHeading title="Verlauf" subtitle={`KPI-Entwicklung · ${FILTER_LABELS[filter]}`} />
+              <KpiTrendChart
+                data={buildChartData(
+                  rawEvents.map(e => GESAMT_REMAP[e.event_type] ? { ...e, event_type: GESAMT_REMAP[e.event_type] } : e),
+                  ['Erreichte Personen','Entscheider','Termin vereinbart'],
+                  filter, customFrom, customTo,
+                )}
+                kpiKeys={['Erreichte Personen','Entscheider','Termin vereinbart']}
               />
             </section>
               </>

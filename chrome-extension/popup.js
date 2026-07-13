@@ -271,7 +271,8 @@ function playSound(type) {
 }
 
 function triggerCelebration(eventType, originEl) {
-  if (eventType === 'Termin vereinbart' || eventType === 'Email: Termin vereinbart') {
+  if (eventType === 'Termin vereinbart' || eventType === 'Email: Termin vereinbart'
+      || eventType === 'Instagram: Termin vereinbart' || eventType === 'Inbound: Termin vereinbart') {
     spawnConfetti(originEl)
     playSound('termin')
   } else if (eventType === 'Als Kunden gewonnen') {

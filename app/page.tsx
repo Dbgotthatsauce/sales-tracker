@@ -550,14 +550,25 @@ export default function DashboardPage() {
     activeFrom: string,
     activeTo: string,
   ) {
-    let q = supabase.from('tracking_events').select('event_type, value, created_at')
+    // Stabile Sortierung ist Pflicht für die Paginierung unten: ohne ORDER BY
+    // liefert Postgres über mehrere .range()-Requests keine feste Reihenfolge,
+    // wodurch Zeilen doppelt geladen oder übersprungen werden könnten.
+    let q = supabase.from('tracking_events')
+      .select('event_type, value, created_at')
+      .order('created_at', { ascending: true })
 
     if (activeFilter === 'custom') {
-      if (activeFrom) q = q.gte('created_at', new Date(activeFrom).toISOString())
+      // Datums-Strings ("YYYY-MM-DD") als LOKALE Tagesgrenzen interpretieren –
+      // new Date("YYYY-MM-DD") würde UTC-Mitternacht ergeben und wäre damit
+      // gegenüber den Presets (getStartDate, lokale Mitternacht) verschoben.
+      if (activeFrom) {
+        const [y, m, d] = activeFrom.split('-').map(Number)
+        q = q.gte('created_at', new Date(y, m - 1, d, 0, 0, 0, 0).toISOString())
+      }
       if (activeTo) {
-        const toDate = new Date(activeTo)
-        toDate.setDate(toDate.getDate() + 1)
-        q = q.lt('created_at', toDate.toISOString())
+        const [y, m, d] = activeTo.split('-').map(Number)
+        // Beginn des Folgetags (lokal); Monats-/Jahresüberlauf regelt Date selbst
+        q = q.lt('created_at', new Date(y, m - 1, d + 1, 0, 0, 0, 0).toISOString())
       }
     } else {
       const startDate = getStartDate(activeFilter)

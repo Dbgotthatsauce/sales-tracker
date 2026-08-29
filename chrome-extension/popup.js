@@ -169,7 +169,13 @@ async function loadDailyTotals(accessToken, userId) {
   const res = await fetch(url.toString(), {
     headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${accessToken}` },
   })
-  if (!res.ok) return {}
+  if (!res.ok) {
+    // Fehler nicht verschlucken – sonst würden die Counter fälschlich auf 0
+    // gesetzt. 401 markieren, damit der Aufrufer den Token erneuern kann.
+    const err = new Error(`HTTP ${res.status}`)
+    if (res.status === 401) err.isAuthError = true
+    throw err
+  }
 
   const rows = await res.json()
   const totals = {}
@@ -272,7 +278,8 @@ function playSound(type) {
 
 function triggerCelebration(eventType, originEl) {
   if (eventType === 'Termin vereinbart' || eventType === 'Email: Termin vereinbart'
-      || eventType === 'Instagram: Termin vereinbart' || eventType === 'Inbound: Termin vereinbart') {
+      || eventType === 'Instagram: Termin vereinbart' || eventType === 'Inbound: Termin vereinbart'
+      || eventType === 'Follow Up: Termin vereinbart') {
     spawnConfetti(originEl)
     playSound('termin')
   } else if (eventType === 'Als Kunden gewonnen') {
@@ -415,10 +422,17 @@ function initTracker(accessToken, userId) {
 
   // ── Heutige Summen laden und Counter befüllen ────────────
   async function refreshCounters() {
+    // WICHTIG: gültigen Token beschaffen (erneuert abgelaufene Tokens automatisch),
+    // sonst liefert der Lese-Request nach ~1 Std. ein 401 und die Zahlen wären weg.
+    const token = await getValidToken()
+    if (!token) {
+      // Session endgültig ungültig (Refresh fehlgeschlagen) → Neuanmeldung nötig
+      showSessionExpiredBanner()
+      return
+    }
     const s = loadSession()
-    if (!s?.accessToken) return   // kein Token → still ignorieren, kein Banner
     try {
-      const totals = await loadDailyTotals(s.accessToken, s.userId ?? userId)
+      const totals = await loadDailyTotals(token, s?.userId ?? userId)
       document.querySelectorAll('.kpi-btn').forEach(btn => {
         const input = btn.querySelector('.counter-input')
         if (!input) return
@@ -428,13 +442,22 @@ function initTracker(accessToken, userId) {
         input.value        = val
         input.dataset.prev = val
       })
+      hideSessionExpiredBanner()
     } catch (err) {
       console.error('Fehler beim Laden der Tagessummen:', err)
-      // Nur lesen, kein Banner – Schreibvorgänge entscheiden über Auth-Fehler
+      // Bei echtem Auth-Fehler Banner zeigen; bei Netzwerk-Blip die bereits
+      // angezeigten Zahlen NICHT auf 0 überschreiben.
+      if (err.isAuthError) showSessionExpiredBanner()
     }
   }
 
   refreshCounters()
+
+  // Beim erneuten Öffnen/Fokussieren des Side Panels Zahlen neu laden – so sind
+  // sie auch nach längerer Pause (und über den Tageswechsel hinweg) aktuell.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') refreshCounters()
+  })
 
   // ── Diff senden ──────────────────────────────────────────
   async function sendDiff(eventType, diff, counterInput, originBtn) {

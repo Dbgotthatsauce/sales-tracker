@@ -78,6 +78,12 @@ CREATE TABLE IF NOT EXISTS public.tracking_events (
             'Inbound: Entscheider erreicht',
             'Inbound: Termin vereinbart',
             'Inbound: Kein Termin vereinbart',
+            -- Kanal: Follow Up
+            'Follow Up: Anwahlen',
+            'Follow Up: Erreichte Personen',
+            'Follow Up: Entscheider erreicht',
+            'Follow Up: Termin vereinbart',
+            'Follow Up: Kein Termin vereinbart',
             -- Setting
             'Setting geführt',
             'Setting Unqualifiziert',

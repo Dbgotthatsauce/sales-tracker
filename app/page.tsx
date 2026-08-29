@@ -61,10 +61,10 @@ function getStartDate(filter: Filter): Date | null {
 // ─── Gesamt-Aggregation (kanalübergreifend) ───────────────────
 // Vergleichbare Funnel-Stufen aller vier Kanäle werden zu je einer
 // Gesamt-Kennzahl zusammengezählt.
-const GESAMT_ERREICHT = ['Erreichte Personen', 'Email: Erreichte Personen', 'Instagram: Erreichte Personen', 'Inbound: Erreichte Personen']
-const GESAMT_ENTSCHEIDER = ['Entscheider', 'Email: Entscheider erreicht', 'Instagram: Entscheider erreicht', 'Inbound: Entscheider erreicht']
-const GESAMT_TERMIN = ['Termin vereinbart', 'Email: Termin vereinbart', 'Instagram: Termin vereinbart', 'Inbound: Termin vereinbart']
-const GESAMT_KEIN_TERMIN = ['Email: Kein Termin vereinbart', 'Instagram: Kein Termin vereinbart', 'Inbound: Kein Termin vereinbart']
+const GESAMT_ERREICHT = ['Erreichte Personen', 'Email: Erreichte Personen', 'Instagram: Erreichte Personen', 'Inbound: Erreichte Personen', 'Follow Up: Erreichte Personen']
+const GESAMT_ENTSCHEIDER = ['Entscheider', 'Email: Entscheider erreicht', 'Instagram: Entscheider erreicht', 'Inbound: Entscheider erreicht', 'Follow Up: Entscheider erreicht']
+const GESAMT_TERMIN = ['Termin vereinbart', 'Email: Termin vereinbart', 'Instagram: Termin vereinbart', 'Inbound: Termin vereinbart', 'Follow Up: Termin vereinbart']
+const GESAMT_KEIN_TERMIN = ['Email: Kein Termin vereinbart', 'Instagram: Kein Termin vereinbart', 'Inbound: Kein Termin vereinbart', 'Follow Up: Kein Termin vereinbart']
 
 // Ordnet jeden Kanal-Event-Typ seiner Gesamt-Sammelkennzahl zu (für den Verlaufs-Chart)
 const GESAMT_REMAP: Record<string, string> = {}
@@ -73,7 +73,7 @@ GESAMT_ENTSCHEIDER.forEach(k => { GESAMT_REMAP[k] = 'Entscheider' })
 GESAMT_TERMIN.forEach(k => { GESAMT_REMAP[k] = 'Termin vereinbart' })
 
 // ─── Chart helpers ────────────────────────────────────────────
-const CHART_COLORS = ['#6366f1', '#22d3ee', '#a78bfa', '#34d399', '#fb923c', '#f472b6']
+const CHART_COLORS = ['#1861DA', '#3884FF', '#6BA5FF', '#93C0FF', '#B9D6FF', '#0F49A6']
 
 const MONTH_ABBR = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez']
 const WEEKDAY_ORDER = ['Mo','Di','Mi','Do','Fr','Sa','So']
@@ -186,12 +186,12 @@ function buildChartData(
 interface KpiCardProps { label: string; value: string | number; icon: React.ReactNode }
 function KpiCard({ label, value, icon }: KpiCardProps) {
   return (
-    <div className="rounded-xl border border-slate-700 bg-slate-800 p-4 flex flex-col gap-2">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold uppercase tracking-widest text-slate-500 leading-tight">{label}</span>
-        <span className="text-slate-600 shrink-0">{icon}</span>
+        <span className="text-slate-400 shrink-0">{icon}</span>
       </div>
-      <span className="text-2xl font-bold text-slate-100 tabular-nums">{value}</span>
+      <span className="text-2xl font-bold text-slate-900 tabular-nums">{value}</span>
     </div>
   )
 }
@@ -200,7 +200,7 @@ function GroupHeading({ label }: { label: string }) {
   return (
     <div className="col-span-full flex items-center gap-3 pt-2 first:pt-0">
       <span className="text-xs font-bold uppercase tracking-widest text-slate-500">{label}</span>
-      <div className="flex-1 h-px bg-slate-700" />
+      <div className="flex-1 h-px bg-slate-200" />
     </div>
   )
 }
@@ -210,15 +210,15 @@ function RateCard({ label, numeratorLabel, denominatorLabel, rate }: RateCardPro
   const rateNum  = parseFloat(rate)
   const barWidth = Math.min(rateNum, 100)
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-800 p-4 flex flex-col gap-3">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
-        <span className="text-sm font-semibold text-slate-300 leading-tight">{label}</span>
-        <span className="text-2xl font-bold tabular-nums shrink-0 text-slate-100">{rate}%</span>
+        <span className="text-sm font-semibold text-slate-700 leading-tight">{label}</span>
+        <span className="text-2xl font-bold tabular-nums shrink-0 text-slate-900">{rate}%</span>
       </div>
-      <div className="h-1 rounded-full bg-slate-700 overflow-hidden">
-        <div className="h-full rounded-full transition-all duration-700 bg-indigo-500" style={{ width: `${barWidth}%` }} />
+      <div className="h-1 rounded-full bg-slate-200 overflow-hidden">
+        <div className="h-full rounded-full transition-all duration-700 bg-[#3884FF]" style={{ width: `${barWidth}%` }} />
       </div>
-      <div className="flex items-center gap-1 text-xs text-slate-600">
+      <div className="flex items-center gap-1 text-xs text-slate-400">
         <span className="text-slate-500">{numeratorLabel}</span>
         <span>÷</span>
         <span className="text-slate-500">{denominatorLabel}</span>
@@ -230,7 +230,7 @@ function RateCard({ label, numeratorLabel, denominatorLabel, rate }: RateCardPro
 function SectionHeading({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div className="mb-4">
-      <h2 className="text-lg font-bold text-white">{title}</h2>
+      <h2 className="text-lg font-bold text-slate-900">{title}</h2>
       {subtitle && <p className="text-sm text-slate-500 mt-0.5">{subtitle}</p>}
     </div>
   )
@@ -244,14 +244,14 @@ interface KpiTrendChartProps {
 
 function KpiTrendChart({ data, kpiKeys }: KpiTrendChartProps) {
   return (
-    <div className="rounded-xl border border-slate-700 bg-slate-800 p-5">
+    <div className="rounded-xl border border-slate-200 bg-white p-5">
       <ResponsiveContainer width="100%" height={280}>
         <LineChart data={data} margin={{ top: 5, right: 16, left: -10, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
           <XAxis
             dataKey="label"
             tick={{ fill: '#64748b', fontSize: 11 }}
-            axisLine={{ stroke: '#334155' }}
+            axisLine={{ stroke: '#cbd5e1' }}
             tickLine={false}
             interval="preserveStartEnd"
           />
@@ -262,11 +262,11 @@ function KpiTrendChart({ data, kpiKeys }: KpiTrendChartProps) {
             allowDecimals={false}
           />
           <Tooltip
-            contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '10px', fontSize: '12px' }}
-            labelStyle={{ color: '#94a3b8', marginBottom: '4px' }}
-            itemStyle={{ color: '#e2e8f0' }}
+            contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '10px', fontSize: '12px', boxShadow: '0 4px 12px rgba(15,23,42,0.08)' }}
+            labelStyle={{ color: '#64748b', marginBottom: '4px' }}
+            itemStyle={{ color: '#0f172a' }}
           />
-          <Legend wrapperStyle={{ fontSize: '12px', color: '#94a3b8', paddingTop: '12px' }} />
+          <Legend wrapperStyle={{ fontSize: '12px', color: '#64748b', paddingTop: '12px' }} />
           {kpiKeys.map((key, i) => (
             <Line
               key={key}
@@ -376,11 +376,11 @@ function DateRangePicker({ from, to, onChange, onApply, onClose }: DateRangePick
         {/* Month navigation */}
         <div className="flex items-center justify-between mb-1">
           {hasPrev
-            ? <button onClick={prevMonth} className="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"><ChevronLeft size={14} /></button>
+            ? <button onClick={prevMonth} className="p-1 rounded hover:bg-slate-100 text-slate-600 hover:text-slate-800 transition-colors cursor-pointer"><ChevronLeft size={14} /></button>
             : <div className="w-6" />}
-          <span className="text-sm font-bold text-slate-100">{MONTH_NAMES[month]} {year}</span>
+          <span className="text-sm font-bold text-slate-900">{MONTH_NAMES[month]} {year}</span>
           {hasNext
-            ? <button onClick={nextMonth} className="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"><ChevronRight size={14} /></button>
+            ? <button onClick={nextMonth} className="p-1 rounded hover:bg-slate-100 text-slate-600 hover:text-slate-800 transition-colors cursor-pointer"><ChevronRight size={14} /></button>
             : <div className="w-6" />}
         </div>
 
@@ -410,15 +410,15 @@ function DateRangePicker({ from, to, onChange, onApply, onClose }: DateRangePick
                 onMouseLeave={() => pendingFrom !== null && setHoverDate(null)}
                 className={[
                   'relative h-8 text-xs font-medium transition-colors cursor-pointer select-none',
-                  isFrom || isTo ? 'bg-indigo-600 text-white' : '',
-                  inRange        ? 'bg-indigo-900/50 text-slate-200' : '',
-                  !isFrom && !isTo && !inRange ? 'text-slate-300 hover:bg-slate-700 hover:text-white' : '',
+                  isFrom || isTo ? 'bg-[#3884FF] text-white' : '',
+                  inRange        ? 'bg-[#3884FF]/10 text-slate-800' : '',
+                  !isFrom && !isTo && !inRange ? 'text-slate-700 hover:bg-slate-100 hover:text-slate-900' : '',
                   isSingle       ? 'rounded-lg' : isFrom ? 'rounded-l-lg' : isTo ? 'rounded-r-lg' : '',
                 ].join(' ')}
               >
                 {day}
                 {isToday && !isFrom && !isTo && (
-                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-indigo-400" />
+                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[#3884FF]" />
                 )}
               </button>
             )
@@ -435,20 +435,20 @@ function DateRangePicker({ from, to, onChange, onApply, onClose }: DateRangePick
   return (
     <div
       ref={ref}
-      className="absolute top-full left-0 mt-2 z-50 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-5 flex flex-col gap-4"
+      className="absolute top-full left-0 mt-2 z-50 bg-slate-50 border border-slate-200 rounded-xl shadow-2xl p-5 flex flex-col gap-4"
     >
       <div className="flex gap-6">
         {renderMonth(leftYear, leftMonth, true, false)}
-        <div className="w-px bg-slate-700 self-stretch" />
+        <div className="w-px bg-slate-200 self-stretch" />
         {renderMonth(rightYear, rightMonth, false, true)}
       </div>
 
-      <div className="flex items-center justify-between pt-3 border-t border-slate-700">
+      <div className="flex items-center justify-between pt-3 border-t border-slate-200">
         <span className="text-xs text-slate-500">{pendingFrom ? `Von: ${formatDisplay(pendingFrom)} …` : rangeLabel}</span>
         <button
           onClick={() => { onApply(from, to); onClose() }}
           disabled={!from || !to || !!pendingFrom}
-          className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-[#3884FF] hover:bg-[#1861DA] text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
         >
           Anwenden
         </button>
@@ -460,7 +460,7 @@ function DateRangePicker({ from, to, onChange, onApply, onClose }: DateRangePick
 // ─── Auth Loading Screen ──────────────────────────────────────
 function AuthLoading() {
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+    <div className="min-h-screen bg-white flex items-center justify-center">
       <div className="flex items-center gap-3 text-slate-500">
         <span className="inline-block animate-spin text-xl">↻</span>
         <span className="text-sm">Authentifizierung…</span>
@@ -492,7 +492,7 @@ export default function DashboardPage() {
   const [users, setUsers]                 = useState<UserProfile[]>([])
   const [selectedUserId, setSelectedUserId] = useState<string>('all')
   const [activeTab, setActiveTab]         = useState<'leads' | 'setting' | 'closing'>('leads')
-  const [leadChannel, setLeadChannel]     = useState<'cold-calling' | 'email' | 'instagram' | 'inbound' | 'gesamt'>('cold-calling')
+  const [leadChannel, setLeadChannel]     = useState<'cold-calling' | 'email' | 'instagram' | 'inbound' | 'follow-up' | 'gesamt'>('cold-calling')
 
   // ── Auth-Check beim ersten Laden ──────────────────────────
   useEffect(() => {
@@ -638,18 +638,18 @@ export default function DashboardPage() {
 
   // ── Render ────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen bg-white text-slate-900">
 
       {/* Header */}
-      <header className="border-b border-slate-800 bg-slate-950 sticky top-0 z-10">
+      <header className="border-b border-slate-200 bg-white sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-6 py-4 flex flex-col gap-3">
 
           {/* Titelzeile */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img src="/logo.svg" alt="Logo" className="h-8 w-8 object-contain" />
+              <img src="/logo.svg" alt="Logo" className="h-8 w-8 object-contain rounded-lg" />
               <div>
-                <h1 className="text-lg font-bold text-white leading-tight">Sales Tracking Dashboard</h1>
+                <h1 className="text-lg font-bold text-slate-900 leading-tight">Sales Tracking Dashboard</h1>
                 <p className="text-xs text-slate-500">
                   {isAdmin ? 'Aggregierte KPIs aller Aktivitäten' : `Deine persönlichen KPIs · ${userEmail}`}
                 </p>
@@ -657,7 +657,7 @@ export default function DashboardPage() {
             </div>
             <div className="flex items-center gap-2">
               {lastUpdated && (
-                <span className="text-xs text-slate-600 hidden sm:block">
+                <span className="text-xs text-slate-400 hidden sm:block">
                   Stand: {lastUpdated.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
                 </span>
               )}
@@ -670,7 +670,7 @@ export default function DashboardPage() {
                     value={selectedUserId}
                     onChange={(e) => setSelectedUserId(e.target.value)}
                     disabled={loading}
-                    className="appearance-none pl-3 pr-7 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 border border-slate-700 text-slate-200 cursor-pointer transition-colors hover:border-slate-500 focus:outline-none focus:border-indigo-500 disabled:cursor-not-allowed"
+                    className="appearance-none pl-3 pr-7 py-1.5 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-800 cursor-pointer transition-colors hover:border-slate-400 focus:outline-none focus:border-[#3884FF] disabled:cursor-not-allowed"
                   >
                     <option value="all">👥 Gesamtes Team</option>
                     {users.map((u) => (
@@ -683,7 +683,7 @@ export default function DashboardPage() {
               <button
                 onClick={() => loadData(filter, selectedUserId)}
                 disabled={loading}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors disabled:opacity-50 cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white hover:bg-slate-100 border border-slate-200 transition-colors disabled:opacity-50 cursor-pointer"
               >
                 <span className={loading ? 'inline-block animate-spin' : ''}>↻</span>
                 {loading ? 'Lädt…' : 'Aktualisieren'}
@@ -693,7 +693,7 @@ export default function DashboardPage() {
               <button
                 onClick={handleLogout}
                 title="Ausloggen"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-800 transition-colors cursor-pointer"
               >
                 <LogOut size={13} />
                 <span className="hidden sm:inline">Logout</span>
@@ -703,7 +703,7 @@ export default function DashboardPage() {
 
           {/* Filterleiste – nur Zeitfilter */}
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-1 p-1 bg-slate-900 border border-slate-700 rounded-xl">
+            <div className="flex items-center gap-1 p-1 bg-slate-50 border border-slate-200 rounded-xl">
               {(Object.keys(FILTER_LABELS) as Filter[]).map((f) => (
                 <button
                   key={f}
@@ -716,8 +716,8 @@ export default function DashboardPage() {
                   className={[
                     'px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer disabled:cursor-not-allowed',
                     filter === f
-                      ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-900'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800',
+                      ? 'bg-[#3884FF] text-white shadow-sm shadow-[#1861DA]/20'
+                      : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100',
                   ].join(' ')}
                 >
                   {FILTER_LABELS[f]}
@@ -729,7 +729,7 @@ export default function DashboardPage() {
               <div className="relative">
                 <button
                   onClick={() => setShowPicker(p => !p)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 border border-slate-700 text-slate-200 hover:border-indigo-500 transition-colors cursor-pointer"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white border border-slate-200 text-slate-800 hover:border-[#3884FF] transition-colors cursor-pointer"
                 >
                   <CalendarCheck size={12} />
                   {customFrom && customTo && customFrom !== customTo
@@ -752,7 +752,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Tab-Leiste */}
-          <div className="flex border-b border-slate-800 -mb-4">
+          <div className="flex border-b border-slate-200 -mb-4">
             {([
               { id: 'leads',   label: 'Leads'   },
               { id: 'setting', label: 'Setting' },
@@ -764,8 +764,8 @@ export default function DashboardPage() {
                 className={[
                   'px-5 py-3 text-sm font-semibold border-b-2 transition-colors cursor-pointer',
                   activeTab === id
-                    ? 'border-indigo-500 text-slate-100'
-                    : 'border-transparent text-slate-500 hover:text-slate-300 hover:border-slate-600',
+                    ? 'border-[#3884FF] text-slate-900'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300',
                 ].join(' ')}
               >
                 {label}
@@ -780,8 +780,8 @@ export default function DashboardPage() {
 
         {/* Error Banner */}
         {error && (
-          <div className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-slate-300">
-            <strong className="text-slate-300">Fehler beim Laden:</strong> {error}
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+            <strong className="text-slate-700">Fehler beim Laden:</strong> {error}
           </div>
         )}
 
@@ -790,12 +790,12 @@ export default function DashboardPage() {
           <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {Array.from({ length: 10 }).map((_, i) => (
-                <div key={i} className="rounded-xl border border-slate-700 bg-slate-800 h-20 animate-pulse" />
+                <div key={i} className="rounded-xl border border-slate-200 bg-slate-100 h-20 animate-pulse" />
               ))}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="rounded-xl border border-slate-700 bg-slate-800 h-24 animate-pulse" />
+                <div key={i} className="rounded-xl border border-slate-200 bg-slate-100 h-24 animate-pulse" />
               ))}
             </div>
           </div>
@@ -805,12 +805,13 @@ export default function DashboardPage() {
         {!loading && activeTab === 'leads' && (
           <>
             {/* Kanal-Auswahl */}
-            <div className="flex items-center gap-1 p-1 bg-slate-900 border border-slate-700 rounded-xl w-fit">
+            <div className="flex items-center gap-1 p-1 bg-slate-50 border border-slate-200 rounded-xl w-fit">
               {([
                 { id: 'cold-calling', label: 'Cold Calling' },
                 { id: 'email',        label: 'Email'        },
                 { id: 'instagram',    label: 'Instagram'    },
                 { id: 'inbound',      label: 'Inbound'      },
+                { id: 'follow-up',    label: 'Follow Up'    },
                 { id: 'gesamt',       label: 'Gesamt'       },
               ] as const).map(({ id, label }) => (
                 <button
@@ -819,8 +820,8 @@ export default function DashboardPage() {
                   className={[
                     'px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer',
                     leadChannel === id
-                      ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-900'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800',
+                      ? 'bg-[#3884FF] text-white shadow-sm shadow-[#1861DA]/20'
+                      : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100',
                   ].join(' ')}
                 >
                   {label}
@@ -971,6 +972,39 @@ export default function DashboardPage() {
               </>
             )}
 
+            {/* ── Kanal: Follow Up ────────────────────────────── */}
+            {leadChannel === 'follow-up' && (
+              <>
+            <section>
+              <SectionHeading title="Aktivitäten" subtitle="Follow Up KPIs" />
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                <KpiCard label="Anwahlen"               value={get('Follow Up: Anwahlen')}              icon={<Phone size={16} />} />
+                <KpiCard label="Erreichte Personen"     value={get('Follow Up: Erreichte Personen')}    icon={<UserCheck size={16} />} />
+                <KpiCard label="Entscheider erreicht"   value={get('Follow Up: Entscheider erreicht')}  icon={<Briefcase size={16} />} />
+                <KpiCard label="Termin vereinbart"      value={get('Follow Up: Termin vereinbart')}     icon={<CheckCheck size={16} />} />
+                <KpiCard label="Termin nicht vereinbart" value={get('Follow Up: Kein Termin vereinbart')} icon={<CalendarX size={16} />} />
+              </div>
+            </section>
+            <section>
+              <SectionHeading title="Quoten" subtitle="Conversion Rates Follow Up" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <RateCard label="Anwahlen → Erreichte Personen"       numeratorLabel="Erreichte Personen"   denominatorLabel="Anwahlen"             rate={rate('Follow Up: Erreichte Personen', 'Follow Up: Anwahlen')} />
+                <RateCard label="Erreichte Personen → Entscheider"     numeratorLabel="Entscheider erreicht" denominatorLabel="Erreichte Personen"   rate={rate('Follow Up: Entscheider erreicht', 'Follow Up: Erreichte Personen')} />
+                <RateCard label="Entscheider → Termin vereinbart"      numeratorLabel="Termin vereinbart"    denominatorLabel="Entscheider erreicht" rate={rate('Follow Up: Termin vereinbart', 'Follow Up: Entscheider erreicht')} />
+                <RateCard label="Anwahlen → Termin vereinbart"         numeratorLabel="Termin vereinbart"    denominatorLabel="Anwahlen"             rate={rate('Follow Up: Termin vereinbart', 'Follow Up: Anwahlen')} />
+                <RateCard label="Terminquote (Termin ÷ Termin + Kein)" numeratorLabel="Termin vereinbart"    denominatorLabel="Termin + Kein Termin" rate={rateRaw(get('Follow Up: Termin vereinbart'), get('Follow Up: Termin vereinbart') + get('Follow Up: Kein Termin vereinbart'))} />
+              </div>
+            </section>
+            <section>
+              <SectionHeading title="Verlauf" subtitle={`KPI-Entwicklung · ${FILTER_LABELS[filter]}`} />
+              <KpiTrendChart
+                data={buildChartData(rawEvents, ['Follow Up: Anwahlen','Follow Up: Erreichte Personen','Follow Up: Entscheider erreicht','Follow Up: Termin vereinbart'], filter, customFrom, customTo)}
+                kpiKeys={['Follow Up: Anwahlen','Follow Up: Erreichte Personen','Follow Up: Entscheider erreicht','Follow Up: Termin vereinbart']}
+              />
+            </section>
+              </>
+            )}
+
             {/* ── Kanal: Gesamt (kanalübergreifend) ───────────── */}
             {leadChannel === 'gesamt' && (
               <>
@@ -1055,13 +1089,13 @@ export default function DashboardPage() {
         {/* ── Tab: Closing ────────────────────────────────────── */}
         {!loading && activeTab === 'closing' && (
           <>
-            <div className="rounded-xl border border-slate-600 bg-slate-800 p-5 flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-slate-700 flex items-center justify-center shrink-0">
-                <Euro size={20} className="text-indigo-400" />
+            <div className="rounded-xl border border-slate-300 bg-white p-5 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-lg bg-[#3884FF]/10 flex items-center justify-center shrink-0">
+                <Euro size={20} className="text-[#3884FF]" />
               </div>
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Gesamtbetrag</p>
-                <p className="text-3xl font-bold text-slate-100 tabular-nums">
+                <p className="text-3xl font-bold text-slate-900 tabular-nums">
                   {get('Betrag').toLocaleString('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })}
                 </p>
               </div>

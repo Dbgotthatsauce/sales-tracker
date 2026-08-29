@@ -2,7 +2,10 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0f172a;
+  /* Marken-Farben */
+  --brand: #3884ff;
+  --brand-dark: #1861da;
 }
 
 @theme inline {
@@ -12,12 +15,8 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* Helles Theme fest verankert – kein automatischer Dark-Mode-Wechsel,
+   damit die weiße Marken-Optik konsistent bleibt. */
 
 body {
   background: var(--background);

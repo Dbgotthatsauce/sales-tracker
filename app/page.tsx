@@ -1066,17 +1066,6 @@ export default function DashboardPage() {
               </div>
             </section>
             <section>
-              <SectionHeading title="Qualität" subtitle="Gesprächsqualität im Setting" />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <RateCard label="Pain-Frage"          numeratorLabel="Pain-Frage"          denominatorLabel="Setting geführt" rate={rate('Pain-Frage', 'Setting geführt')} />
-                <RateCard label="Budget erfasst"      numeratorLabel="Budget erfasst"      denominatorLabel="Setting geführt" rate={rate('Budget erfasst', 'Setting geführt')} />
-                <RateCard label="Entscheider erfragt" numeratorLabel="Entscheider erfragt" denominatorLabel="Setting geführt" rate={rate('Entscheider erfragt', 'Setting geführt')} />
-                <RateCard label="Startpunkt erfasst"  numeratorLabel="Startpunkt erfasst"  denominatorLabel="Setting geführt" rate={rate('Startpunkt erfasst', 'Setting geführt')} />
-                <RateCard label="Testabschluss 1"     numeratorLabel="Testabschluss 1"     denominatorLabel="Setting geführt" rate={rate('Testabschluss 1', 'Setting geführt')} />
-                <RateCard label="Testabschluss 2"     numeratorLabel="Testabschluss 2"     denominatorLabel="Setting geführt" rate={rate('Testabschluss 2', 'Setting geführt')} />
-              </div>
-            </section>
-            <section>
               <SectionHeading title="Verlauf" subtitle={`KPI-Entwicklung · ${FILTER_LABELS[filter]}`} />
               <KpiTrendChart
                 data={buildChartData(rawEvents, ['Setting geführt','Closing terminiert','No Show','Setting Follow Up'], filter, customFrom, customTo)}

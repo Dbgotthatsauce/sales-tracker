@@ -27,6 +27,28 @@ function clearSession() {
 }
 
 // =============================================================
+// Erfassungs-Datum (KPIs nachtragen)
+// =============================================================
+// Auf welches Datum gebucht wird. Default = heute; im Nachtrag-Modus ein
+// vergangenes Datum ("YYYY-MM-DD"). Wird bei jedem Öffnen auf heute gesetzt.
+let trackingDate = todayStr()
+
+function todayStr() {
+  const n = new Date()
+  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`
+}
+
+// created_at für den Schreibvorgang:
+//   heute        → null  (Server nutzt now(), erhält die genaue Uhrzeit für Charts)
+//   Vergangenheit→ lokale 12:00 Uhr des gewählten Tages (sicher im richtigen
+//                  lokalen Tag, unabhängig von der Zeitzone)
+function trackingCreatedAtISO() {
+  if (trackingDate === todayStr()) return null
+  const [y, m, d] = trackingDate.split('-').map(Number)
+  return new Date(y, m - 1, d, 12, 0, 0, 0).toISOString()
+}
+
+// =============================================================
 // Token-Verwaltung: Ablauf prüfen & automatisch erneuern
 // =============================================================
 function isTokenExpired(token) {
@@ -110,7 +132,10 @@ async function supabaseGetUser(accessToken) {
 // =============================================================
 // Supabase REST API – Event eintragen
 // =============================================================
-async function trackEvent(eventType, value, accessToken, userId) {
+async function trackEvent(eventType, value, accessToken, userId, createdAt = null) {
+  // created_at nur mitsenden, wenn nachgetragen wird – sonst setzt die DB now().
+  const row = { user_id: userId, event_type: eventType, value }
+  if (createdAt) row.created_at = createdAt
   const res = await fetch(`${SUPABASE_URL}/rest/v1/tracking_events`, {
     method: 'POST',
     headers: {
@@ -119,7 +144,7 @@ async function trackEvent(eventType, value, accessToken, userId) {
       'Content-Type':  'application/json',
       'Prefer':        'return=minimal',
     },
-    body: JSON.stringify({ user_id: userId, event_type: eventType, value }),
+    body: JSON.stringify(row),
   })
   if (!res.ok) {
     const text = await res.text()
@@ -131,7 +156,8 @@ async function trackEvent(eventType, value, accessToken, userId) {
 
 // Schreibt ein Event – bei 401 einmal Token refreshen und nochmals versuchen.
 // Wirft { isAuthError: true } nur wenn Auth auch nach Refresh scheitert.
-async function trackEventWithAuth(eventType, value) {
+// createdAt (optional) datiert das Event zurück (Nachtrag-Modus).
+async function trackEventWithAuth(eventType, value, createdAt = null) {
   const s = loadSession()
   if (!s?.accessToken) {
     const err = new Error('Keine Session')
@@ -139,7 +165,7 @@ async function trackEventWithAuth(eventType, value) {
     throw err
   }
   try {
-    await trackEvent(eventType, value, s.accessToken, s.userId)
+    await trackEvent(eventType, value, s.accessToken, s.userId, createdAt)
   } catch (err) {
     if (!err.isAuthError) throw err          // echter Netzwerk-/DB-Fehler, kein Auth-Problem
 
@@ -149,22 +175,26 @@ async function trackEventWithAuth(eventType, value) {
     if (!refreshed) throw err
     saveSession(refreshed.accessToken, refreshed.refreshToken, s.userId, s.email)
     // Retry – wenn das nochmals 401 wirft, propagiert der Fehler als isAuthError
-    await trackEvent(eventType, value, refreshed.accessToken, s.userId)
+    await trackEvent(eventType, value, refreshed.accessToken, s.userId, createdAt)
   }
 }
 
 // =============================================================
-// Supabase REST API – Heutige Summen laden
+// Supabase REST API – Tagessummen laden (für ein bestimmtes Datum)
 // =============================================================
-async function loadDailyTotals(accessToken, userId) {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const startOfDay = today.toISOString()
+async function loadTotalsForDate(accessToken, userId, dateStr) {
+  // Lokale Tagesgrenzen [00:00, 24:00) des gewählten Tages – konsistent mit
+  // den Presets im Dashboard, damit die Zahlen exakt übereinstimmen.
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const startOfDay = new Date(y, m - 1, d,     0, 0, 0, 0).toISOString()
+  const endOfDay   = new Date(y, m - 1, d + 1, 0, 0, 0, 0).toISOString()
 
   const url = new URL(`${SUPABASE_URL}/rest/v1/tracking_events`)
   url.searchParams.set('select', 'event_type,value')
   url.searchParams.set('user_id', `eq.${userId}`)
-  url.searchParams.set('created_at', `gte.${startOfDay}`)
+  // Zwei Filter auf dieselbe Spalte werden von PostgREST mit UND verknüpft
+  url.searchParams.append('created_at', `gte.${startOfDay}`)
+  url.searchParams.append('created_at', `lt.${endOfDay}`)
 
   const res = await fetch(url.toString(), {
     headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${accessToken}` },
@@ -420,7 +450,7 @@ function initTracker(accessToken, userId) {
     })
   })
 
-  // ── Heutige Summen laden und Counter befüllen ────────────
+  // ── Tagessummen (des gewählten Datums) laden und Counter befüllen ──
   async function refreshCounters() {
     // WICHTIG: gültigen Token beschaffen (erneuert abgelaufene Tokens automatisch),
     // sonst liefert der Lese-Request nach ~1 Std. ein 401 und die Zahlen wären weg.
@@ -432,7 +462,7 @@ function initTracker(accessToken, userId) {
     }
     const s = loadSession()
     try {
-      const totals = await loadDailyTotals(token, s?.userId ?? userId)
+      const totals = await loadTotalsForDate(token, s?.userId ?? userId, trackingDate)
       document.querySelectorAll('.kpi-btn').forEach(btn => {
         const input = btn.querySelector('.counter-input')
         if (!input) return
@@ -451,24 +481,58 @@ function initTracker(accessToken, userId) {
     }
   }
 
+  // ── Erfassungs-Datum / Nachtrag-Modus ────────────────────
+  const dateInput = document.getElementById('trackingDate')
+
+  function updateBackdateBanner() {
+    const banner  = document.getElementById('backdate-banner')
+    const isPast  = trackingDate !== todayStr()
+    banner.classList.toggle('hidden', !isPast)
+    if (isPast) {
+      const [y, m, d] = trackingDate.split('-')
+      document.getElementById('backdate-banner-text').textContent = `⚠️ Nachtrag-Modus: ${d}.${m}.${y}`
+    }
+  }
+
+  // Setzt das Erfassungs-Datum, aktualisiert Banner + Input und lädt die
+  // Tagessummen des gewählten Tages als neue Counter-Basis.
+  function applyTrackingDate(dateStr) {
+    const today = todayStr()
+    if (!dateStr || dateStr > today) dateStr = today   // keine Zukunft erlauben
+    trackingDate     = dateStr
+    dateInput.value  = dateStr
+    updateBackdateBanner()
+    refreshCounters()
+  }
+
+  dateInput.max = todayStr()
+  dateInput.value = trackingDate
+  updateBackdateBanner()
+  dateInput.addEventListener('change', () => applyTrackingDate(dateInput.value))
+  document.getElementById('backdateResetBtn').addEventListener('click', () => applyTrackingDate(todayStr()))
+
   refreshCounters()
 
-  // Beim erneuten Öffnen/Fokussieren des Side Panels Zahlen neu laden – so sind
-  // sie auch nach längerer Pause (und über den Tageswechsel hinweg) aktuell.
+  // Beim erneuten Öffnen/Fokussieren des Side Panels: Nachtrag-Modus verlassen
+  // (nicht versehentlich in der Vergangenheit weiterbuchen) und Zahlen neu laden
+  // – so sind sie auch nach längerer Pause und über den Tageswechsel hinweg aktuell.
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') refreshCounters()
+    if (document.visibilityState === 'visible') applyTrackingDate(todayStr())
   })
 
   // ── Diff senden ──────────────────────────────────────────
   async function sendDiff(eventType, diff, counterInput, originBtn) {
     if (diff === 0) return
+    const isBackdate = trackingDate !== todayStr()
     try {
-      await trackEventWithAuth(eventType, diff)
+      await trackEventWithAuth(eventType, diff, trackingCreatedAtISO())
       // Erfolg → eventuellen Fehlerbanner sofort ausblenden
       hideSessionExpiredBanner()
       if (diff > 0) {
-        showToast(`✓ ${eventType}${diff !== 1 ? ` (+${diff})` : ''}`, 'ok')
-        if (diff === 1) triggerCelebration(eventType, originBtn)
+        const suffix = diff !== 1 ? ` (+${diff})` : ''
+        showToast(`✓ ${eventType}${suffix}${isBackdate ? ' · nachgetragen' : ''}`, 'ok')
+        // Konfetti nur bei Live-Erfassung, nicht beim Nachtragen
+        if (diff === 1 && !isBackdate) triggerCelebration(eventType, originBtn)
       } else {
         showToast(`↩ ${eventType} (${diff})`, 'undo')
       }
@@ -547,11 +611,12 @@ function initTracker(accessToken, userId) {
     const btn = document.getElementById('betragBtn')
     btn.disabled = true
     try {
-      await trackEventWithAuth('Betrag', absValue)
+      await trackEventWithAuth('Betrag', absValue, trackingCreatedAtISO())
       // Erfolg → eventuellen Fehlerbanner ausblenden
       hideSessionExpiredBanner()
       input.value = ''
-      showToast(`✓ Betrag ${absValue.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} gespeichert`, 'ok')
+      const nachtrag = trackingDate !== todayStr() ? ' · nachgetragen' : ''
+      showToast(`✓ Betrag ${absValue.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} gespeichert${nachtrag}`, 'ok')
     } catch (err) {
       console.error('Betrag-Fehler:', err)
       if (err.isAuthError) {

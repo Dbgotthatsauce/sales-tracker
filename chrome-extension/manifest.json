@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Sales Tracker",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Track your sales KPIs and sync to Supabase.",
   "icons": {
     "16":  "icon16.png",

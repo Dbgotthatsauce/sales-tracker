@@ -49,6 +49,18 @@
       <button id="logoutBtn" class="logout-btn" title="Ausloggen">⏻</button>
     </header>
 
+    <!-- Erfassungs-Datum (KPIs nachtragen) -->
+    <div class="date-scope">
+      <span class="date-scope-label">Erfassung für</span>
+      <input type="date" id="trackingDate" class="date-scope-input" />
+    </div>
+
+    <!-- Nachtrag-Modus Banner (nur bei Datum ≠ heute sichtbar) -->
+    <div id="backdate-banner" class="backdate-banner hidden">
+      <span id="backdate-banner-text">⚠️ Nachtrag-Modus</span>
+      <button id="backdateResetBtn" class="backdate-banner-btn">→ Heute</button>
+    </div>
+
     <!-- Tab Navigation -->
     <nav class="tabs">
       <button class="tab active" data-tab="leads">Leads</button>

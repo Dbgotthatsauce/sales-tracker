@@ -73,7 +73,17 @@ GESAMT_ENTSCHEIDER.forEach(k => { GESAMT_REMAP[k] = 'Entscheider' })
 GESAMT_TERMIN.forEach(k => { GESAMT_REMAP[k] = 'Termin vereinbart' })
 
 // ─── Chart helpers ────────────────────────────────────────────
-const CHART_COLORS = ['#1861DA', '#3884FF', '#6BA5FF', '#93C0FF', '#B9D6FF', '#0F49A6']
+// Kategoriale Palette für die Verlauf-Charts: eigene Farbfamilie pro KPI statt Blau-Abstufungen.
+// Die ersten vier Slots sind auf Unterscheidbarkeit geprüft (auch bei Farbfehlsichtigkeit).
+const CHART_COLORS = ['#1861DA', '#E8590C', '#0E9F6E', '#862E9C', '#E8A700', '#C92A2A']
+
+// Anzeigenamen für event_types, die im Dashboard anders heißen sollen als in der Datenbank.
+// Der gespeicherte event_type bleibt unverändert – hier wird nur die Beschriftung ersetzt.
+const KPI_LABELS: Record<string, string> = {
+  Qualifying: 'Unqualifiziert',
+}
+
+const kpiLabel = (key: string) => KPI_LABELS[key] ?? key
 
 const MONTH_ABBR = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez']
 const WEEKDAY_ORDER = ['Mo','Di','Mi','Do','Fr','Sa','So']
@@ -92,6 +102,10 @@ function getTimeBuckets(filter: Filter, from: string, to: string): string[] {
   if (filter === 'all') return MONTH_ABBR
   // custom
   if (from && to) {
+    // Ein einzelner Tag wird stundenweise aufgelöst – sonst bliebe nur ein Punkt übrig.
+    if (from === to) {
+      return Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`)
+    }
     const start = new Date(from + 'T00:00:00')
     const end   = new Date(to   + 'T23:59:59')
     const diffDays = Math.ceil((end.getTime() - start.getTime()) / 86400000)
@@ -123,6 +137,7 @@ function getEventBucket(createdAt: string, filter: Filter, from: string, to: str
   if (filter === 'month')  return String(d.getDate())
   if (filter === 'all')    return MONTH_ABBR[d.getMonth()]
   if (from && to) {
+    if (from === to) return `${String(d.getHours()).padStart(2, '0')}:00`
     const start = new Date(from + 'T00:00:00')
     const end   = new Date(to   + 'T23:59:59')
     const diffDays = Math.ceil((end.getTime() - start.getTime()) / 86400000)
@@ -266,12 +281,16 @@ function KpiTrendChart({ data, kpiKeys }: KpiTrendChartProps) {
             labelStyle={{ color: '#64748b', marginBottom: '4px' }}
             itemStyle={{ color: '#0f172a' }}
           />
-          <Legend wrapperStyle={{ fontSize: '12px', color: '#64748b', paddingTop: '12px' }} />
+          <Legend
+            wrapperStyle={{ fontSize: '12px', paddingTop: '12px' }}
+            formatter={(value) => <span style={{ color: '#475569' }}>{value}</span>}
+          />
           {kpiKeys.map((key, i) => (
             <Line
               key={key}
               type="monotone"
               dataKey={key}
+              name={kpiLabel(key)}
               stroke={CHART_COLORS[i % CHART_COLORS.length]}
               strokeWidth={2}
               dot={false}
@@ -855,7 +874,7 @@ export default function DashboardPage() {
                 <KpiCard label="Pitch"                  value={get('Pitch')}                    icon={<Target size={16} />} />
                 <KpiCard label="Nach Termin gefragt"    value={get('Nach Termin gefragt')}      icon={<CalendarCheck size={16} />} />
                 <KpiCard label="Termin vereinbart"      value={get('Termin vereinbart')}        icon={<CheckCheck size={16} />} />
-                <KpiCard label="Qualifying"             value={get('Qualifying')}               icon={<ClipboardList size={16} />} />
+                <KpiCard label="Unqualifiziert"         value={get('Qualifying')}               icon={<ClipboardList size={16} />} />
                 <KpiCard label="Nachqualifizierung"     value={get('Nachqualifizierung')}       icon={<Search size={16} />} />
               </div>
             </section>
@@ -869,14 +888,14 @@ export default function DashboardPage() {
                 <RateCard label="Entscheider → Termin vereinbart"   numeratorLabel="Termin vereinbart"   denominatorLabel="Entscheider"         rate={rate('Termin vereinbart', 'Entscheider')} />
                 <RateCard label="Pitch → Nach Termin gefragt"          numeratorLabel="Nach Termin gefragt" denominatorLabel="Pitch"           rate={rate('Nach Termin gefragt', 'Pitch')} />
                 <RateCard label="Termin vereinbart → Nachqualifizierung" numeratorLabel="Nachqualifizierung" denominatorLabel="Termin vereinbart" rate={rate('Nachqualifizierung', 'Termin vereinbart')} />
-                <RateCard label="Entscheider → Qualifying"          numeratorLabel="Qualifying"          denominatorLabel="Entscheider"         rate={rate('Qualifying', 'Entscheider')} />
+                <RateCard label="Entscheider → Unqualifiziert"      numeratorLabel="Unqualifiziert"      denominatorLabel="Entscheider"         rate={rate('Qualifying', 'Entscheider')} />
               </div>
             </section>
             <section>
               <SectionHeading title="Verlauf" subtitle={`KPI-Entwicklung · ${FILTER_LABELS[filter]}`} />
               <KpiTrendChart
-                data={buildChartData(rawEvents, ['Anwahlen','Erreichte Personen','Entscheider','Termin vereinbart','Qualifying'], filter, customFrom, customTo)}
-                kpiKeys={['Anwahlen','Erreichte Personen','Entscheider','Termin vereinbart','Qualifying']}
+                data={buildChartData(rawEvents, ['Erreichte Personen','Entscheider','Termin vereinbart','Qualifying'], filter, customFrom, customTo)}
+                kpiKeys={['Erreichte Personen','Entscheider','Termin vereinbart','Qualifying']}
               />
             </section>
               </>
@@ -1009,8 +1028,8 @@ export default function DashboardPage() {
             <section>
               <SectionHeading title="Verlauf" subtitle={`KPI-Entwicklung · ${FILTER_LABELS[filter]}`} />
               <KpiTrendChart
-                data={buildChartData(rawEvents, ['Follow Up: Anwahlen','Follow Up: Erreichte Personen','Follow Up: Entscheider erreicht','Follow Up: Termin vereinbart'], filter, customFrom, customTo)}
-                kpiKeys={['Follow Up: Anwahlen','Follow Up: Erreichte Personen','Follow Up: Entscheider erreicht','Follow Up: Termin vereinbart']}
+                data={buildChartData(rawEvents, ['Follow Up: Erreichte Personen','Follow Up: Entscheider erreicht','Follow Up: Termin vereinbart'], filter, customFrom, customTo)}
+                kpiKeys={['Follow Up: Erreichte Personen','Follow Up: Entscheider erreicht','Follow Up: Termin vereinbart']}
               />
             </section>
               </>

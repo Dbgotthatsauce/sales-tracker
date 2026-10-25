@@ -26,7 +26,7 @@
 --   7.  Setting zu Closing                  = Closing terminiert       / Setting geführt
 --   8.  Setting zu Unqualifiziert           = Setting Unqualifiziert   / Setting geführt
 --   9.  No Show zu Follow Up                = Setting Follow Up        / No Show
---  10.  Termin vereinbart zu No Show        = No Show                  / Termin vereinbart
+--  10.  No-Show-Quote Setting              = No Show                  / (Setting geführt + No Show)
 --  11.  Closing geführt zu Als Kunden       = Als Kunden gewonnen      / Closing geführt
 --  12.  Closing vereinbart zu No Show Rate  = Closing No Show          / Closing terminiert
 --  13.  No Show zu Folgebesprechung         = Folgebesprechung vereinbart / No Show
@@ -44,6 +44,8 @@ CREATE TABLE IF NOT EXISTS public.tracking_events (
     event_type  text                     NOT NULL,
     value       numeric                  NOT NULL DEFAULT 1,
     created_at  timestamp with time zone NOT NULL DEFAULT now(),
+    -- Grund (aktuell nur bei 'Setting Unqualifiziert'); Freitext als 'Sonstiges: <Text>'
+    reason      text                     CHECK (reason IS NULL OR char_length(reason) <= 500),
 
     CONSTRAINT tracking_events_event_type_check CHECK (
         event_type IN (
@@ -90,6 +92,7 @@ CREATE TABLE IF NOT EXISTS public.tracking_events (
             'No Show',
             'Setting Follow Up',
             'Setting verschoben',
+            'Setting abgesagt',
             'Closing terminiert',
             -- Setting-Checkliste
             'Pain-Frage',
@@ -135,3 +138,12 @@ CREATE POLICY "Eigene Events einfügen"
 -- =============================================================
 CREATE INDEX IF NOT EXISTS idx_tracking_events_user_created
     ON public.tracking_events (user_id, created_at DESC);
+
+
+-- =============================================================
+-- Migration: Grund-Spalte nachrüsten (bestehende Datenbanken)
+-- =============================================================
+ALTER TABLE public.tracking_events ADD COLUMN IF NOT EXISTS reason text;
+ALTER TABLE public.tracking_events DROP CONSTRAINT IF EXISTS tracking_events_reason_length_check;
+ALTER TABLE public.tracking_events ADD CONSTRAINT tracking_events_reason_length_check
+    CHECK (reason IS NULL OR char_length(reason) <= 500);

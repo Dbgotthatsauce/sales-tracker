@@ -9,7 +9,7 @@ import {
   XCircle, Ghost, PhoneForwarded, CheckCheck, MessageSquare,
   FolderSync, CalendarPlus, Trophy, Euro, Search, LogOut,
   ChevronLeft, ChevronRight, ClipboardList, CalendarClock,
-  MailCheck, Send, MessageCircle, Inbox,
+  MailCheck, Send, MessageCircle, Inbox, Ban,
 } from 'lucide-react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -22,7 +22,7 @@ import { clearSessionCookie } from '@/lib/session-cookie'
 // ─── Types ────────────────────────────────────────────────────
 type Totals = Record<string, number>
 type Filter = 'today' | 'week' | 'month' | 'all' | 'custom'
-type RawEvent = { event_type: string; value: number; created_at: string }
+type RawEvent = { event_type: string; value: number; created_at: string; reason?: string | null }
 type ChartPoint = Record<string, number | string>
 
 interface UserProfile {
@@ -207,6 +207,78 @@ function KpiCard({ label, value, icon }: KpiCardProps) {
         <span className="text-slate-400 shrink-0">{icon}</span>
       </div>
       <span className="text-2xl font-bold text-slate-900 tabular-nums">{value}</span>
+    </div>
+  )
+}
+
+// ─── Gründe "Setting Unqualifiziert" ─────────────────────────
+// Muss zu den Optionen im Extension-Modal passen (chrome-extension/popup.html).
+// Freitext wird als "Sonstiges: <Text>" gespeichert und hier unter Sonstiges gesammelt.
+const UNQUALIFIZIERT_REASONS = [
+  'Kein Budget',
+  'Keine Produkte zum Optimieren/Launchen',
+  'Keine Zeit für das Tool / keine Mitarbeiter',
+  'Sonstiges',
+]
+const OHNE_GRUND = 'Ohne Grund erfasst'
+
+function UnqualifiedReasons({ events }: { events: RawEvent[] }) {
+  const counts: Record<string, number> = {}
+  const otherTexts: Record<string, number> = {}
+  for (const e of events) {
+    if (e.event_type !== 'Setting Unqualifiziert') continue
+    const v = Number(e.value)
+    const reason = e.reason ?? ''
+    let key = OHNE_GRUND
+    if (reason.startsWith('Sonstiges')) {
+      key = 'Sonstiges'
+      const text = reason.replace(/^Sonstiges:?\s*/, '')
+      if (text) otherTexts[text] = (otherTexts[text] ?? 0) + v
+    } else if (UNQUALIFIZIERT_REASONS.includes(reason)) {
+      key = reason
+    }
+    counts[key] = (counts[key] ?? 0) + v
+  }
+
+  const rows = [...UNQUALIFIZIERT_REASONS, OHNE_GRUND]
+    .map(label => ({ label, value: Math.max(counts[label] ?? 0, 0) }))
+    .filter(r => r.label !== OHNE_GRUND || r.value > 0)
+  const total = rows.reduce((sum, r) => sum + r.value, 0)
+  const max   = Math.max(...rows.map(r => r.value), 1)
+  const others = Object.entries(otherTexts).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1])
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4 flex flex-col gap-4">
+      {rows.map(r => (
+        <div key={r.label} className="flex flex-col gap-1.5">
+          <div className="flex items-baseline justify-between gap-3">
+            <span className={`text-sm font-semibold leading-tight ${r.label === OHNE_GRUND ? 'text-slate-400' : 'text-slate-700'}`}>{r.label}</span>
+            <span className="text-sm tabular-nums shrink-0 text-slate-500">
+              <span className="font-bold text-slate-900">{r.value}</span>
+              {' · '}{total > 0 ? ((r.value / total) * 100).toFixed(1) : '0.0'}%
+            </span>
+          </div>
+          <div className="h-1.5 rounded-full bg-slate-200 overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-700 ${r.label === OHNE_GRUND ? 'bg-slate-300' : 'bg-[#3884FF]'}`}
+              style={{ width: `${(r.value / max) * 100}%` }}
+            />
+          </div>
+        </div>
+      ))}
+      {others.length > 0 && (
+        <div className="border-t border-slate-200 pt-3">
+          <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">Sonstige Gründe</span>
+          <ul className="mt-2 flex flex-col gap-1">
+            {others.map(([text, n]) => (
+              <li key={text} className="flex items-start justify-between gap-3 text-sm text-slate-700">
+                <span>{text}</span>
+                <span className="tabular-nums text-slate-500 shrink-0">{n}×</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   )
 }
@@ -573,7 +645,7 @@ export default function DashboardPage() {
     // liefert Postgres über mehrere .range()-Requests keine feste Reihenfolge,
     // wodurch Zeilen doppelt geladen oder übersprungen werden könnten.
     let q = supabase.from('tracking_events')
-      .select('event_type, value, created_at')
+      .select('event_type, value, created_at, reason')
       .order('created_at', { ascending: true })
 
     if (activeFilter === 'custom') {
@@ -1083,6 +1155,7 @@ export default function DashboardPage() {
                 <KpiCard label="No Show"                value={get('No Show')}                icon={<Ghost size={16} />} />
                 <KpiCard label="Setting Follow Up"      value={get('Setting Follow Up')}      icon={<RefreshCw size={16} />} />
                 <KpiCard label="Setting verschoben"     value={get('Setting verschoben')}     icon={<CalendarClock size={16} />} />
+                <KpiCard label="Setting abgesagt"       value={get('Setting abgesagt')}       icon={<Ban size={16} />} />
                 <KpiCard label="Closing terminiert"     value={get('Closing terminiert')}     icon={<PhoneForwarded size={16} />} />
               </div>
             </section>
@@ -1091,9 +1164,15 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <RateCard label="Setting → Closing (terminiert)" numeratorLabel="Closing terminiert"     denominatorLabel="Setting geführt"   rate={rate('Closing terminiert', 'Setting geführt')} />
                 <RateCard label="Setting → verschoben"           numeratorLabel="Setting verschoben"     denominatorLabel="Setting geführt"   rate={rate('Setting verschoben', 'Setting geführt')} />
+                <RateCard label="Setting → abgesagt"             numeratorLabel="Setting abgesagt"       denominatorLabel="Setting geführt"   rate={rate('Setting abgesagt', 'Setting geführt')} />
                 <RateCard label="Setting → Unqualifiziert"       numeratorLabel="Setting Unqualifiziert" denominatorLabel="Setting geführt"   rate={rate('Setting Unqualifiziert', 'Setting geführt')} />
-                <RateCard label="Termin vereinbart → No Show"    numeratorLabel="No Show"                denominatorLabel="Termin vereinbart" rate={rate('No Show', 'Termin vereinbart')} />
+                {/* Nenner = geplante Settings (stattgefunden + geplatzt): beide werden am Setting-Tag erfasst und sind kanalunabhängig */}
+                <RateCard label="No-Show-Quote Setting"          numeratorLabel="No Show"                denominatorLabel="Setting geführt + No Show" rate={rateRaw(get('No Show'), get('Setting geführt') + get('No Show'))} />
               </div>
+            </section>
+            <section>
+              <SectionHeading title="Gründe Unqualifiziert" subtitle={`Warum Settings unqualifiziert waren · ${FILTER_LABELS[filter]}`} />
+              <UnqualifiedReasons events={rawEvents} />
             </section>
             <section>
               <SectionHeading title="Verlauf" subtitle={`KPI-Entwicklung · ${FILTER_LABELS[filter]}`} />

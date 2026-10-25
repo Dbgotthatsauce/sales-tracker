@@ -132,10 +132,11 @@ async function supabaseGetUser(accessToken) {
 // =============================================================
 // Supabase REST API – Event eintragen
 // =============================================================
-async function trackEvent(eventType, value, accessToken, userId, createdAt = null) {
+async function trackEvent(eventType, value, accessToken, userId, createdAt = null, reason = null) {
   // created_at nur mitsenden, wenn nachgetragen wird – sonst setzt die DB now().
   const row = { user_id: userId, event_type: eventType, value }
   if (createdAt) row.created_at = createdAt
+  if (reason)    row.reason     = reason
   const res = await fetch(`${SUPABASE_URL}/rest/v1/tracking_events`, {
     method: 'POST',
     headers: {
@@ -157,7 +158,8 @@ async function trackEvent(eventType, value, accessToken, userId, createdAt = nul
 // Schreibt ein Event – bei 401 einmal Token refreshen und nochmals versuchen.
 // Wirft { isAuthError: true } nur wenn Auth auch nach Refresh scheitert.
 // createdAt (optional) datiert das Event zurück (Nachtrag-Modus).
-async function trackEventWithAuth(eventType, value, createdAt = null) {
+// reason (optional) speichert den Grund, z. B. bei "Setting Unqualifiziert".
+async function trackEventWithAuth(eventType, value, createdAt = null, reason = null) {
   const s = loadSession()
   if (!s?.accessToken) {
     const err = new Error('Keine Session')
@@ -165,7 +167,7 @@ async function trackEventWithAuth(eventType, value, createdAt = null) {
     throw err
   }
   try {
-    await trackEvent(eventType, value, s.accessToken, s.userId, createdAt)
+    await trackEvent(eventType, value, s.accessToken, s.userId, createdAt, reason)
   } catch (err) {
     if (!err.isAuthError) throw err          // echter Netzwerk-/DB-Fehler, kein Auth-Problem
 
@@ -175,7 +177,7 @@ async function trackEventWithAuth(eventType, value, createdAt = null) {
     if (!refreshed) throw err
     saveSession(refreshed.accessToken, refreshed.refreshToken, s.userId, s.email)
     // Retry – wenn das nochmals 401 wirft, propagiert der Fehler als isAuthError
-    await trackEvent(eventType, value, refreshed.accessToken, s.userId, createdAt)
+    await trackEvent(eventType, value, refreshed.accessToken, s.userId, createdAt, reason)
   }
 }
 
@@ -328,6 +330,75 @@ function showToast(message, type = 'ok') {
   toast.className = `toast show ${type}`
   if (toastTimer) clearTimeout(toastTimer)
   toastTimer = setTimeout(() => { toast.className = 'toast hidden' }, 2200)
+}
+
+// =============================================================
+// Grund-Abfrage (KPIs mit data-reason-required)
+// =============================================================
+// Öffnet das Modal und liefert den gewählten Grund – "Sonstiges" wird als
+// "Sonstiges: <Freitext>" gespeichert – oder null bei Abbruch.
+// Bei Korrekturen (diff < 0) ist der Freitext optional.
+let reasonModalOpen = false
+
+function askReason(diff) {
+  const modal  = document.getElementById('reason-modal')
+  const title  = document.getElementById('reasonTitle')
+  const select = document.getElementById('reasonSelect')
+  const other  = document.getElementById('reasonOther')
+  const error  = document.getElementById('reasonError')
+  const save   = document.getElementById('reasonSave')
+  const cancel = document.getElementById('reasonCancel')
+
+  const count = Math.abs(diff)
+  title.textContent = diff > 0
+    ? (count === 1 ? 'Warum unqualifiziert?' : `Warum unqualifiziert? (${count} Settings)`)
+    : `Korrektur (−${count}): Welcher Grund wird abgezogen?`
+  select.value = ''
+  other.value  = ''
+  other.classList.add('hidden')
+  error.classList.add('hidden')
+  modal.classList.remove('hidden')
+  reasonModalOpen = true
+  select.focus()
+
+  return new Promise(resolve => {
+    function showError(msg) {
+      error.textContent = msg
+      error.classList.remove('hidden')
+    }
+    function onSelect() {
+      error.classList.add('hidden')
+      const isOther = select.value === 'Sonstiges'
+      other.classList.toggle('hidden', !isOther)
+      if (isOther) other.focus()
+    }
+    function onSave() {
+      if (!select.value) { showError('Bitte einen Grund auswählen.'); return }
+      if (select.value !== 'Sonstiges') { close(select.value); return }
+      const text = other.value.trim()
+      if (!text && diff > 0) { showError('Bitte den Grund eingeben.'); other.focus(); return }
+      close(text ? `Sonstiges: ${text}` : 'Sonstiges')
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') close(null)
+      if (e.key === 'Enter' && e.target !== other) { e.preventDefault(); onSave() }
+    }
+    function close(result) {
+      modal.classList.add('hidden')
+      reasonModalOpen = false
+      select.removeEventListener('change', onSelect)
+      save.removeEventListener('click', onSave)
+      cancel.removeEventListener('click', onCancel)
+      modal.removeEventListener('keydown', onKey)
+      resolve(result)
+    }
+    function onCancel() { close(null) }
+
+    select.addEventListener('change', onSelect)
+    save.addEventListener('click', onSave)
+    cancel.addEventListener('click', onCancel)
+    modal.addEventListener('keydown', onKey)
+  })
 }
 
 // =============================================================
@@ -521,16 +592,16 @@ function initTracker(accessToken, userId) {
   })
 
   // ── Diff senden ──────────────────────────────────────────
-  async function sendDiff(eventType, diff, counterInput, originBtn) {
+  async function sendDiff(eventType, diff, counterInput, originBtn, reason = null) {
     if (diff === 0) return
     const isBackdate = trackingDate !== todayStr()
     try {
-      await trackEventWithAuth(eventType, diff, trackingCreatedAtISO())
+      await trackEventWithAuth(eventType, diff, trackingCreatedAtISO(), reason)
       // Erfolg → eventuellen Fehlerbanner sofort ausblenden
       hideSessionExpiredBanner()
       if (diff > 0) {
         const suffix = diff !== 1 ? ` (+${diff})` : ''
-        showToast(`✓ ${eventType}${suffix}${isBackdate ? ' · nachgetragen' : ''}`, 'ok')
+        showToast(`✓ ${reason ? reason.replace(/^Sonstiges: /, '') : eventType}${suffix}${isBackdate ? ' · nachgetragen' : ''}`, 'ok')
         // Konfetti nur bei Live-Erfassung, nicht beim Nachtragen
         if (diff === 1 && !isBackdate) triggerCelebration(eventType, originBtn)
       } else {
@@ -549,17 +620,30 @@ function initTracker(accessToken, userId) {
 
   // ── KPI Button Events ────────────────────────────────────
   document.querySelectorAll('.kpi-btn').forEach(btn => {
-    const eventType    = btn.dataset.event
-    const counterInput = btn.querySelector('.counter-input')
+    const eventType      = btn.dataset.event
+    const counterInput   = btn.querySelector('.counter-input')
+    const reasonRequired = btn.hasAttribute('data-reason-required')
+
+    // Grund abfragen (nur bei data-reason-required). Liefert undefined, wenn kein
+    // Grund nötig ist, null bei Abbruch – dann wird der Counter zurückgesetzt.
+    async function reasonFor(diff) {
+      if (!reasonRequired) return undefined
+      const reason = await askReason(diff)
+      if (reason === null) counterInput.value = counterInput.dataset.prev ?? '0'
+      return reason
+    }
 
     // Klick auf den großen Button → +1
     btn.addEventListener('click', async (e) => {
       if (e.target === counterInput) return   // Klick auf Input ignorieren
+      if (reasonModalOpen) return
+      const reason = await reasonFor(1)
+      if (reason === null) return
       const prev = parseInt(counterInput.dataset.prev ?? '0', 10)
       const next = prev + 1
       counterInput.value        = next
       counterInput.dataset.prev = next
-      await sendDiff(eventType, 1, counterInput, btn)
+      await sendDiff(eventType, 1, counterInput, btn, reason)
     })
 
     // Klick/Mousedown auf Input: nicht an Button weitergeben
@@ -573,6 +657,7 @@ function initTracker(accessToken, userId) {
     counterInput.addEventListener('input', () => {
       clearTimeout(counterInput._debounce)
       if (counterInput.value === '') return          // leer lassen, bis Nutzer fertig ist
+      if (reasonRequired) return                     // Grund erst bei Enter/Blur abfragen (change)
       counterInput._debounce = setTimeout(async () => {
         const prev = parseInt(counterInput.dataset.prev ?? '0', 10)
         const next = parseInt(counterInput.value, 10)
@@ -594,8 +679,11 @@ function initTracker(accessToken, userId) {
       if (rawVal === '') counterInput.value = 0      // leeres Feld als 0 anzeigen
       const diff = next - prev
       if (diff === 0) return
+      if (reasonModalOpen) { counterInput.value = prev; return }
+      const reason = await reasonFor(diff)
+      if (reason === null) return
       counterInput.dataset.prev = next
-      await sendDiff(eventType, diff, counterInput, btn)
+      await sendDiff(eventType, diff, counterInput, btn, reason)
     })
   })
 

@@ -77,6 +77,26 @@
     <!-- Toast Notification -->
     <div id="toast" class="toast hidden"></div>
 
+    <!-- Grund-Abfrage (z. B. Setting Unqualifiziert) -->
+    <div id="reason-modal" class="reason-modal hidden">
+      <div class="reason-card">
+        <div class="reason-title" id="reasonTitle">Warum unqualifiziert?</div>
+        <select id="reasonSelect" class="reason-select">
+          <option value="" disabled selected>Grund auswählen…</option>
+          <option value="Kein Budget">Kein Budget</option>
+          <option value="Keine Produkte zum Optimieren/Launchen">Keine Produkte zum Optimieren/Launchen</option>
+          <option value="Keine Zeit für das Tool / keine Mitarbeiter">Keine Zeit für das Tool / keine Mitarbeiter</option>
+          <option value="Sonstiges">Sonstiges</option>
+        </select>
+        <textarea id="reasonOther" class="reason-other hidden" rows="2" maxlength="300" placeholder="Grund eingeben…"></textarea>
+        <div id="reasonError" class="reason-error hidden"></div>
+        <div class="reason-actions">
+          <button id="reasonCancel" class="reason-btn secondary">Abbrechen</button>
+          <button id="reasonSave" class="reason-btn primary">Speichern</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ── LEADS ─────────────────────────────────────────────────── -->
     <section id="leads" class="panel active">
 
@@ -342,7 +362,7 @@
           <input class="counter-input" type="number" value="0" min="0" />
         </button>
 
-        <button class="kpi-btn" data-event="Setting Unqualifiziert">
+        <button class="kpi-btn" data-event="Setting Unqualifiziert" data-reason-required>
           <span class="kpi-icon">❌</span>
           <span class="kpi-label">Setting Unqualifiziert</span>
           <input class="counter-input" type="number" value="0" min="0" />
@@ -363,6 +383,12 @@
         <button class="kpi-btn" data-event="Setting verschoben">
           <span class="kpi-icon">⏭️</span>
           <span class="kpi-label">Setting verschoben</span>
+          <input class="counter-input" type="number" value="0" min="0" />
+        </button>
+
+        <button class="kpi-btn" data-event="Setting abgesagt">
+          <span class="kpi-icon">🚫</span>
+          <span class="kpi-label">Setting abgesagt</span>
           <input class="counter-input" type="number" value="0" min="0" />
         </button>
 

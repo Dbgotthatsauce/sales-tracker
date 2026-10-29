@@ -25,12 +25,12 @@
 --   6.  Pitch zu Nach Termin gefragt        = Nach Termin gefragt      / Pitch
 --   7.  Setting zu Closing                  = Closing terminiert       / Setting geführt
 --   8.  Setting zu Unqualifiziert           = Setting Unqualifiziert   / Setting geführt
---   9.  No Show zu Follow Up                = Setting Follow Up        / No Show
+--   9.  Setting zu verschoben / abgesagt    = Setting verschoben bzw. abgesagt / Setting geführt
 --  10.  No-Show-Quote Setting              = No Show                  / (Setting geführt + No Show)
 --  11.  Closing geführt zu Als Kunden       = Als Kunden gewonnen      / Closing geführt
 --  12.  Closing vereinbart zu No Show Rate  = Closing No Show          / Closing terminiert
 --  13.  No Show zu Folgebesprechung         = Folgebesprechung vereinbart / No Show
---  14.  No Show zu Follow Up (Closing)      = Closing Follow Up        / Closing No Show
+--  14.  Closing zu verschoben / abgesagt    = Closing verschoben bzw. abgesagt / Closing terminiert
 --  15.  Folgebesprechung vereinbart zu NS   = Folgebesprechung No Show / Folgebesprechung vereinbart
 -- -------------------------------------------------------------
 
@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS public.tracking_events (
             'Setting geführt',
             'Setting Unqualifiziert',
             'No Show',
-            'Setting Follow Up',
+            'Setting Follow Up',          -- nicht mehr erfasst, bleibt für Altdaten erlaubt
             'Setting verschoben',
             'Setting abgesagt',
             'Closing terminiert',
@@ -104,7 +104,9 @@ CREATE TABLE IF NOT EXISTS public.tracking_events (
             -- Closing
             'Closing geführt',
             'Closing No Show',
-            'Closing Follow Up',
+            'Closing Follow Up',          -- nicht mehr erfasst, bleibt für Altdaten erlaubt
+            'Closing verschoben',
+            'Closing abgesagt',
             'Folgebesprechung vereinbart',
             'Folgebesprechung No Show',
             'Als Kunden gewonnen',

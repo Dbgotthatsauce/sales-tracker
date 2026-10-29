@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation'
 import React from 'react'
 import {
   Phone, UserCheck, Briefcase, DoorClosed, Handshake,
-  BookOpen, Target, CalendarCheck, CalendarX, RefreshCw,
+  BookOpen, Target, CalendarCheck, CalendarX,
   XCircle, Ghost, PhoneForwarded, CheckCheck, MessageSquare,
-  FolderSync, CalendarPlus, Trophy, Euro, Search, LogOut,
+  CalendarPlus, Trophy, Euro, Search, LogOut,
   ChevronLeft, ChevronRight, ClipboardList, CalendarClock,
   MailCheck, Send, MessageCircle, Inbox, Ban,
 } from 'lucide-react'
@@ -1153,7 +1153,6 @@ export default function DashboardPage() {
                 <KpiCard label="Setting geführt"        value={get('Setting geführt')}        icon={<MessageSquare size={16} />} />
                 <KpiCard label="Setting Unqualifiziert" value={get('Setting Unqualifiziert')} icon={<XCircle size={16} />} />
                 <KpiCard label="No Show"                value={get('No Show')}                icon={<Ghost size={16} />} />
-                <KpiCard label="Setting Follow Up"      value={get('Setting Follow Up')}      icon={<RefreshCw size={16} />} />
                 <KpiCard label="Setting verschoben"     value={get('Setting verschoben')}     icon={<CalendarClock size={16} />} />
                 <KpiCard label="Setting abgesagt"       value={get('Setting abgesagt')}       icon={<Ban size={16} />} />
                 <KpiCard label="Closing terminiert"     value={get('Closing terminiert')}     icon={<PhoneForwarded size={16} />} />
@@ -1177,8 +1176,8 @@ export default function DashboardPage() {
             <section>
               <SectionHeading title="Verlauf" subtitle={`KPI-Entwicklung · ${FILTER_LABELS[filter]}`} />
               <KpiTrendChart
-                data={buildChartData(rawEvents, ['Setting geführt','Closing terminiert','No Show','Setting Follow Up'], filter, customFrom, customTo)}
-                kpiKeys={['Setting geführt','Closing terminiert','No Show','Setting Follow Up']}
+                data={buildChartData(rawEvents, ['Setting geführt','Closing terminiert','No Show','Setting verschoben'], filter, customFrom, customTo)}
+                kpiKeys={['Setting geführt','Closing terminiert','No Show','Setting verschoben']}
               />
             </section>
           </>
@@ -1203,7 +1202,8 @@ export default function DashboardPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
                 <KpiCard label="Closing geführt"          value={get('Closing geführt')}           icon={<MessageSquare size={16} />} />
                 <KpiCard label="Closing No Show"          value={get('Closing No Show')}           icon={<Ghost size={16} />} />
-                <KpiCard label="Closing Follow Up"        value={get('Closing Follow Up')}         icon={<FolderSync size={16} />} />
+                <KpiCard label="Closing verschoben"       value={get('Closing verschoben')}        icon={<CalendarClock size={16} />} />
+                <KpiCard label="Closing abgesagt"         value={get('Closing abgesagt')}          icon={<Ban size={16} />} />
                 <KpiCard label="Folgebesprechung ver."    value={get('Folgebesprechung vereinbart')} icon={<CalendarPlus size={16} />} />
                 <KpiCard label="Folgebesprechung No Show" value={get('Folgebesprechung No Show')}  icon={<CalendarX size={16} />} />
                 <KpiCard label="Als Kunden gewonnen"      value={get('Als Kunden gewonnen')}       icon={<Trophy size={16} />} />
@@ -1217,15 +1217,16 @@ export default function DashboardPage() {
                 <RateCard label="Closing geführt → Nicht gewonnen"        numeratorLabel="Nicht als Kunden gewonnen"  denominatorLabel="Closing geführt"              rate={rate('Nicht als Kunden gewonnen', 'Closing geführt')} />
                 <RateCard label="Closing vereinbart → No Show Rate"        numeratorLabel="Closing No Show"            denominatorLabel="Closing terminiert"           rate={rate('Closing No Show', 'Closing terminiert')} />
                 <RateCard label="Closing No Show → Folgebesprechung ver."  numeratorLabel="Folgebesprechung vereinbart" denominatorLabel="Closing No Show"             rate={rate('Folgebesprechung vereinbart', 'Closing No Show')} />
-                <RateCard label="No Show → Follow Up (gesamt)"             numeratorLabel="Setting FU + Closing FU"   denominatorLabel="No Show + Closing No Show"    rate={rateRaw(get('Setting Follow Up') + get('Closing Follow Up'), get('No Show') + get('Closing No Show'))} />
+                <RateCard label="Closing terminiert → verschoben"          numeratorLabel="Closing verschoben"         denominatorLabel="Closing terminiert"           rate={rate('Closing verschoben', 'Closing terminiert')} />
+                <RateCard label="Closing terminiert → abgesagt"            numeratorLabel="Closing abgesagt"           denominatorLabel="Closing terminiert"           rate={rate('Closing abgesagt', 'Closing terminiert')} />
                 <RateCard label="Folgebesprechung ver. → No Show Rate"     numeratorLabel="Folgebesprechung No Show"   denominatorLabel="Folgebesprechung vereinbart"  rate={rate('Folgebesprechung No Show', 'Folgebesprechung vereinbart')} />
               </div>
             </section>
             <section>
               <SectionHeading title="Verlauf" subtitle={`KPI-Entwicklung · ${FILTER_LABELS[filter]}`} />
               <KpiTrendChart
-                data={buildChartData(rawEvents, ['Closing geführt','Als Kunden gewonnen','Closing No Show','Closing Follow Up'], filter, customFrom, customTo)}
-                kpiKeys={['Closing geführt','Als Kunden gewonnen','Closing No Show','Closing Follow Up']}
+                data={buildChartData(rawEvents, ['Closing geführt','Als Kunden gewonnen','Closing No Show','Closing verschoben'], filter, customFrom, customTo)}
+                kpiKeys={['Closing geführt','Als Kunden gewonnen','Closing No Show','Closing verschoben']}
               />
             </section>
           </>

@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS public.tracking_events (
             'Setting geführt',
             'Setting Unqualifiziert',
             'No Show',
-            'Setting Follow Up',          -- nicht mehr erfasst, bleibt für Altdaten erlaubt
+            'Setting Follow Up',
             'Setting verschoben',
             'Setting abgesagt',
             'Closing terminiert',

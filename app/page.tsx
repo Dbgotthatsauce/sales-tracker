@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import React from 'react'
 import {
   Phone, UserCheck, Briefcase, DoorClosed, Handshake,
-  BookOpen, Target, CalendarCheck, CalendarX,
+  BookOpen, Target, CalendarCheck, CalendarX, RefreshCw,
   XCircle, Ghost, PhoneForwarded, CheckCheck, MessageSquare,
   CalendarPlus, Trophy, Euro, Search, LogOut,
   ChevronLeft, ChevronRight, ClipboardList, CalendarClock,
@@ -1153,6 +1153,7 @@ export default function DashboardPage() {
                 <KpiCard label="Setting geführt"        value={get('Setting geführt')}        icon={<MessageSquare size={16} />} />
                 <KpiCard label="Setting Unqualifiziert" value={get('Setting Unqualifiziert')} icon={<XCircle size={16} />} />
                 <KpiCard label="No Show"                value={get('No Show')}                icon={<Ghost size={16} />} />
+                <KpiCard label="Setting Follow Up"      value={get('Setting Follow Up')}      icon={<RefreshCw size={16} />} />
                 <KpiCard label="Setting verschoben"     value={get('Setting verschoben')}     icon={<CalendarClock size={16} />} />
                 <KpiCard label="Setting abgesagt"       value={get('Setting abgesagt')}       icon={<Ban size={16} />} />
                 <KpiCard label="Closing terminiert"     value={get('Closing terminiert')}     icon={<PhoneForwarded size={16} />} />
@@ -1176,8 +1177,8 @@ export default function DashboardPage() {
             <section>
               <SectionHeading title="Verlauf" subtitle={`KPI-Entwicklung · ${FILTER_LABELS[filter]}`} />
               <KpiTrendChart
-                data={buildChartData(rawEvents, ['Setting geführt','Closing terminiert','No Show','Setting verschoben'], filter, customFrom, customTo)}
-                kpiKeys={['Setting geführt','Closing terminiert','No Show','Setting verschoben']}
+                data={buildChartData(rawEvents, ['Setting geführt','Closing terminiert','No Show','Setting Follow Up'], filter, customFrom, customTo)}
+                kpiKeys={['Setting geführt','Closing terminiert','No Show','Setting Follow Up']}
               />
             </section>
           </>

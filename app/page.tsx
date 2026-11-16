@@ -83,7 +83,7 @@ const KPI_LABELS: Record<string, string> = {
   Qualifying: 'Unqualifiziert',
 }
 
-const kpiLabel = (key: string) => KPI_LABELS[key] ?? key
+const kpiLabel = (key: string) => KPI_LABELS[key] ?? key.replace(/^Instagram: /, 'LinkedIn: ')
 
 const MONTH_ABBR = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez']
 const WEEKDAY_ORDER = ['Mo','Di','Mi','Do','Fr','Sa','So']
@@ -911,7 +911,7 @@ export default function DashboardPage() {
               {([
                 { id: 'cold-calling', label: 'Cold Calling' },
                 { id: 'email',        label: 'Email'        },
-                { id: 'instagram',    label: 'Instagram'    },
+                { id: 'instagram',    label: 'LinkedIn'     },
                 { id: 'inbound',      label: 'Inbound'      },
                 { id: 'follow-up',    label: 'Follow Up'    },
                 { id: 'gesamt',       label: 'Gesamt'       },
@@ -1006,11 +1006,11 @@ export default function DashboardPage() {
               </>
             )}
 
-            {/* ── Kanal: Instagram ────────────────────────────── */}
+            {/* ── Kanal: LinkedIn (Event-Keys heißen intern weiter 'Instagram: …') ────────────────────────────── */}
             {leadChannel === 'instagram' && (
               <>
             <section>
-              <SectionHeading title="Aktivitäten" subtitle="Instagram KPIs" />
+              <SectionHeading title="Aktivitäten" subtitle="LinkedIn KPIs" />
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
                 <KpiCard label="Nachrichten gesendet"   value={get('Instagram: Nachrichten gesendet')}   icon={<Send size={16} />} />
                 <KpiCard label="Positive Replys"        value={get('Instagram: Positive Replys')}        icon={<MessageCircle size={16} />} />
@@ -1021,7 +1021,7 @@ export default function DashboardPage() {
               </div>
             </section>
             <section>
-              <SectionHeading title="Quoten" subtitle="Conversion Rates Instagram" />
+              <SectionHeading title="Quoten" subtitle="Conversion Rates LinkedIn" />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <RateCard label="Nachrichten → Positive Replys"          numeratorLabel="Positive Replys"      denominatorLabel="Nachrichten gesendet" rate={rate('Instagram: Positive Replys', 'Instagram: Nachrichten gesendet')} />
                 <RateCard label="Positive Replys → Erreichte Personen"   numeratorLabel="Erreichte Personen"   denominatorLabel="Positive Replys"      rate={rate('Instagram: Erreichte Personen', 'Instagram: Positive Replys')} />
@@ -1111,7 +1111,7 @@ export default function DashboardPage() {
             {leadChannel === 'gesamt' && (
               <>
             <section>
-              <SectionHeading title="Aktivitäten" subtitle="Gesamt · Cold Calling + Email + Instagram + Inbound" />
+              <SectionHeading title="Aktivitäten" subtitle="Gesamt · Cold Calling + Email + LinkedIn + Inbound" />
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
                 <KpiCard label="Erreichte Personen"     value={getSum(GESAMT_ERREICHT)}     icon={<UserCheck size={16} />} />
                 <KpiCard label="Entscheider"            value={getSum(GESAMT_ENTSCHEIDER)}  icon={<Briefcase size={16} />} />

@@ -326,7 +326,8 @@ function triggerCelebration(eventType, originEl) {
 let toastTimer = null
 function showToast(message, type = 'ok') {
   const toast = document.getElementById('toast')
-  toast.textContent = message
+  // Kanal heißt in der Anzeige LinkedIn, Event-Keys bleiben 'Instagram: …'
+  toast.textContent = message.replace('Instagram: ', 'LinkedIn: ')
   toast.className = `toast show ${type}`
   if (toastTimer) clearTimeout(toastTimer)
   toastTimer = setTimeout(() => { toast.className = 'toast hidden' }, 2200)
